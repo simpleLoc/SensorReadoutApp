@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <MultiSelectListPreference
+        app:entries="@array/prefActiveSensorsEntries"
+        app:entryValues="@array/prefActiveSensorsValues"
+        app:defaultValue="@array/prefActiveSensorsDefault"
+        app:key="prefActiveSensors"
+        app:summary="@string/prefActiveSensorsSummary"
+        app:title="@string/prefActiveSensors" />
+    <SwitchPreferenceCompat
+        app:defaultValue="false"
+        app:key="prefUseWifiFTM"
+        app:title="Use WiFi FTM"
+        app:summary="Use FTM instead of conventional WiFi scanning"/>
+    <MultiSelectListPreference
+        app:entries="@array/prefActiveActionsEntries"
+        app:entryValues="@array/prefActiveActionsValues"
+        app:defaultValue="@array/prefActiveActionsDefault"
+        app:key="prefActiveActions"
+        app:summary="@string/prefActiveActionsSummary"
+        app:title="@string/prefActiveActions" />
+
+</PreferenceScreen>
