@@ -11,6 +11,9 @@
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
 
+    <string name="gps_not_enabled">GPS / Location-Service is not enabled. Please enable it now.</string>
+    <string name="open_location_settings">Open location settings</string>
+
     <string name="prefActiveSensors">Active Sensors</string>
     <string name="prefActiveSensorsSummary">Choose the sensors included in the recording</string>
     <string-array name="prefActiveSensorsEntries">
