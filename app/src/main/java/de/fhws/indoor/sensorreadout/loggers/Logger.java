@@ -94,7 +94,7 @@ public abstract class Logger {
 
         @Override
         public int compareTo(@NonNull LogEntry another) {
-            return (timestamp < another.timestamp) ? (-1) : (+1);
+            return Long.compare(timestamp, another.timestamp);
         }
     }
 
