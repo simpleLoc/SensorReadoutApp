@@ -27,6 +27,7 @@ public enum SensorType {
     GPS(16),
     WIFIRTT(17),
     GAME_ROTATION_VECTOR(18),
+    EDDYSTONE_UID(19),
 
     PEDESTRIAN_ACTIVITY(50),
     GROUND_TRUTH(99),
