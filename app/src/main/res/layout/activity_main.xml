@@ -111,6 +111,16 @@
             android:max="1000"
             android:progress="0"
             android:rotation="-90" />
+
+        <TextView
+            android:layout_width="12pt"
+            android:layout_height="match_parent"
+            android:rotation="90"
+            android:text="@string/app_version"
+            android:textAlignment="center"
+            android:textAllCaps="false"
+            android:textColor="#ffffff"
+            android:textSize="10sp" />
     </LinearLayout>
 
     <LinearLayout
