@@ -278,6 +278,7 @@ public class MainActivity extends AppCompatActivity {
 
     /** new sensor data */
     private int loadCounterWifi = 0;
+    private int loadCounterWifiRTT = 0;
     private int loadCounterBeacon = 0;
     private int loadCounterGPS = 0;
     private int loadCounterAny = 0;
@@ -290,14 +291,17 @@ public class MainActivity extends AppCompatActivity {
 
 
         // update UI for WIFI/BEACON/GPS
-        if (id == SensorType.WIFIRTT || id == SensorType.IBEACON || id == SensorType.GPS) {
+        if (id == SensorType.WIFI || id == SensorType.WIFIRTT || id == SensorType.IBEACON || id == SensorType.GPS) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
 
-                    if (id == SensorType.WIFIRTT) {
+                    if (id == SensorType.WIFI) {
                         final TextView txt = (TextView) findViewById(R.id.txtWifi);
                         txt.setText(((++loadCounterWifi % 7) == 0) ? "wi" : "WI");
+                    } if (id == SensorType.WIFIRTT) {
+                        final TextView txt = (TextView) findViewById(R.id.txtWifiRTT);
+                        txt.setText(((++loadCounterWifiRTT % 7) == 0) ? "rtt" : "RTT");
                     } else if (id == SensorType.IBEACON) {
                         final TextView txt = (TextView) findViewById(R.id.txtBeacon);
                         txt.setText(((++loadCounterBeacon % 2) == 0) ? "ib" : "IB");
