@@ -341,8 +341,10 @@ public class PhoneSensors extends mySensor implements SensorEventListener{
 		if (mGeomagnetic == null) {return;}
 
 		// calculate rotationMatrix and orientation
-		float R[] = new float[16];
-		float I[] = new float[16];
+		// see: https://developer.android.com/reference/android/hardware/SensorManager#getRotationMatrix(float[],%20float[],%20float[],%20float[])
+		// these are row-major
+		float R[] = new float[9];
+		float I[] = new float[9];
 
 		// derive rotation matrix from grav and geo sensors
 		boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
