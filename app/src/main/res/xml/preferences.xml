@@ -20,5 +20,10 @@
         app:key="prefActiveActions"
         app:summary="@string/prefActiveActionsSummary"
         app:title="@string/prefActiveActions" />
+    <EditTextPreference
+        app:defaultValue="AA:BB:CC:DD:EE:FF"
+        app:key="prefDecawaveUWBTagMacAddress"
+        app:singleLine="true"
+        app:title="Decawave UWB Tag MAC-Address" />
 
 </PreferenceScreen>

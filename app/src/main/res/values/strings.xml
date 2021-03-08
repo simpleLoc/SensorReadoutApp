@@ -22,12 +22,14 @@
         <item>WiFi</item>
         <item>Bluetooth</item>
         <item>Phone (Accel, Gyro, Magnet)</item>
+        <item>Decawave UWB</item>
     </string-array>
     <string-array name="prefActiveSensorsValues">
         <item>GPS</item>
         <item>WIFI</item>
         <item>BLUETOOTH</item>
         <item>PHONE</item>
+        <item>DECAWAVE_UWB</item>
     </string-array>
     <string-array name="prefActiveSensorsDefault">
         <item>GPS</item>
