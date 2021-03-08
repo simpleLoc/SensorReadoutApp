@@ -123,7 +123,7 @@ public class WiFiRTT extends mySensor {
         @Override
         public void onRangingResults(final List<RangingResult> list) {
             //emitter.onSuccess(list);
-            Log.d("RTT", "onRangingResults: " + list.size());
+            //Log.d("RTT", "onRangingResults: " + list.size());
 
             for (final RangingResult res : list) {
 
@@ -145,9 +145,9 @@ public class WiFiRTT extends mySensor {
                     numAttemptedMeas = res.getNumAttemptedMeasurements();
                     numSuccessfulMeas = res.getNumSuccessfulMeasurements();
 
-                    Log.d("RTT", mac.toString() + " " + dist + " " + stdDevDist + " " + rssi);
+                    //Log.d("RTT", mac.toString() + " " + dist + " " + stdDevDist + " " + rssi);
                 } else {
-                    Log.d("RTT", mac.toString() + " FAILED");
+                    //Log.d("RTT", mac.toString() + " FAILED");
                 }
 
                 if (listener != null) {
