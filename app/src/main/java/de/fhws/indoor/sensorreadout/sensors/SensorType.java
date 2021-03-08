@@ -28,6 +28,7 @@ public enum SensorType {
     WIFIRTT(17),
     GAME_ROTATION_VECTOR(18),
     EDDYSTONE_UID(19),
+    DECAWAVE_UWB(20),
 
     PEDESTRIAN_ACTIVITY(50),
     GROUND_TRUTH(99),

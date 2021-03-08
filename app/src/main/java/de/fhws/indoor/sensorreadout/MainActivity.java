@@ -40,6 +40,7 @@ import java.util.Set;
 
 import de.fhws.indoor.sensorreadout.loggers.Logger;
 import de.fhws.indoor.sensorreadout.loggers.OrderedLogger;
+import de.fhws.indoor.sensorreadout.sensors.DecawaveUWB;
 import de.fhws.indoor.sensorreadout.sensors.EddystoneUIDBeacon;
 import de.fhws.indoor.sensorreadout.sensors.GpsNew;
 import de.fhws.indoor.sensorreadout.sensors.GroundTruth;
@@ -578,6 +579,17 @@ public class MainActivity extends AppCompatActivity {
                     @Override public void onData(SensorType id, long timestamp, String csv) { return; }
                 });
             }
+        }
+
+        if (activeSensors.contains("DECAWAVE_UWB")) {
+            Log.i("Sensors", "Using Decwave UWB");
+
+            final DecawaveUWB uwb = new DecawaveUWB(this);
+            sensors.add(uwb);
+            uwb.setListener(new mySensor.SensorListener() {
+                @Override public void onData(final long timestamp, final String csv) { add(SensorType.DECAWAVE_UWB, csv, timestamp); }
+                @Override public void onData(final SensorType id, final long timestamp, final String csv) { add(id, csv, timestamp); }
+            });
         }
     }
 
