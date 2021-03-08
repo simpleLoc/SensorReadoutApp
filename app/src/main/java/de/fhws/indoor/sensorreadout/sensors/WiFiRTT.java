@@ -171,6 +171,14 @@ public class WiFiRTT extends mySensor {
 
     @RequiresApi(api = Build.VERSION_CODES.P)
     public static final boolean isSupported(Context context) {
+        int targetSdkVersion = context.getApplicationContext().getApplicationInfo().targetSdkVersion;
+
+        // ScanResultHack requires targetSdkVersion == 27.
+        // Starting with 28 the hack was added to the black list!
+        if (targetSdkVersion > 27) {
+            return false;
+        }
+
         if(!context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_RTT)) {
             return false;
         }
