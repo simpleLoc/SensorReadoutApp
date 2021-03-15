@@ -150,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
                 if(!isInitialized){
                     start();
                     isInitialized = true;
-                    mpStart.start();
+                    playSound(mpStart);
 
                     //Write path id and ground truth point num
                     grndTruth.writeInitData(Integer.parseInt(pathSpinner.getSelectedItem().toString().replaceAll("[\\D]", "")),
@@ -167,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
                     pathSpinner.setEnabled(false);
                 }
                 else{
-                    mpFailure.start();
+                    playSound(mpFailure);
                 }
             }
         });
@@ -187,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
                     metadataDialog.show(getSupportFragmentManager(), "metadata");
                 }
                 else{
-                    mpFailure.start();
+                    playSound(mpFailure);
                 }
             }
         });
@@ -202,7 +202,7 @@ public class MainActivity extends AppCompatActivity {
                     btnGround.setText("Ground Truth");
                     stop();
                     isInitialized = false;
-                    mpStop.start();
+                    playSound(mpStop);
 
                     //Enable the spinners
                     groundSpinner.setEnabled(true);
@@ -212,7 +212,7 @@ public class MainActivity extends AppCompatActivity {
                     setActivityBtn(PedestrianActivity.STANDING, false);
                 }
                 else{
-                    mpFailure.start();
+                    playSound(mpFailure);
                 }
             }
         });
@@ -226,12 +226,12 @@ public class MainActivity extends AppCompatActivity {
                     btnGround.setText(Integer.toString(++groundTruthCounter) + " / "
                                     + numGroundTruthPoints
                     );
-                    mpGround.start();
+                    playSound(mpGround);
 
                     grndTruth.writeGroundTruth(groundTruthCounter);
                 }
                 else{
-                    mpFailure.start();
+                    playSound(mpFailure);
                 }
             }
         });
@@ -242,7 +242,7 @@ public class MainActivity extends AppCompatActivity {
                 if(!isInitialized) { // Only allow when not currently running
                     startActivity(new Intent(context, SettingsActivity.class));
                 } else {
-                    mpFailure.start();
+                    playSound(mpFailure);
                 }
             }
         });
@@ -452,7 +452,7 @@ public class MainActivity extends AppCompatActivity {
                         setActivityBtn(button.getPedestrianActivity(), true);
                     }
                     else{
-                        mpFailure.start();
+                        playSound(mpFailure);
                     }
                 }
             });
@@ -593,5 +593,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+    private void playSound(MediaPlayer player) {
+        if(player.isPlaying()) {
+            player.seekTo(0);
+        } else {
+            player.start();
+        }
+    }
 
 }
