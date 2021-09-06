@@ -45,6 +45,7 @@ public class PhoneSensors extends mySensor implements SensorEventListener{
 	private Sensor light;
 	private Sensor temperature;
 	private Sensor gameRotationVector;
+	private Sensor stepDetector;
 
 	/** local gravity copy (needed for orientation matrix) */
     private float[] mGravity = new float[3];
@@ -72,6 +73,7 @@ public class PhoneSensors extends mySensor implements SensorEventListener{
 		light = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
 		temperature = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE);
 		gameRotationVector = sensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);
+		stepDetector = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR);
 
 		// dump sensor-vendor info to file
 		dumpVendors(act);
@@ -110,6 +112,7 @@ public class PhoneSensors extends mySensor implements SensorEventListener{
 			dumpSensor(sb, SensorType.AMBIENT_TEMPERATURE, temperature);
 			//dumpSensor(sb, SensorType.HEART_RATE, heart);
 			dumpSensor(sb, SensorType.GAME_ROTATION_VECTOR, gameRotationVector);
+			dumpSensor(sb, SensorType.STEP_DETECTOR, stepDetector);
 
 			// write
 			fos.write(sb.toString().getBytes());
@@ -146,22 +149,17 @@ public class PhoneSensors extends mySensor implements SensorEventListener{
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-
+		if(listener == null) { return; }
 		// to compare with the other orientation
 		if(event.sensor.getType() == Sensor.TYPE_ORIENTATION) {
-
 			// inform listeners
-			if (listener != null){
-					listener.onData(SensorType.ORIENTATION_OLD, event.timestamp,
-					Float.toString(event.values[0]) + ";" +
-					Float.toString(event.values[1]) + ";" +
-					Float.toString(event.values[2])
-				);
-			}
-
+			listener.onData(SensorType.ORIENTATION_OLD, event.timestamp,
+				Float.toString(event.values[0]) + ";" +
+				Float.toString(event.values[1]) + ";" +
+				Float.toString(event.values[2])
+			);
 		}
-
-//		if(event.sensor.getType() == Sensor.TYPE_HEART_RATE) {
+//		else if(event.sensor.getType() == Sensor.TYPE_HEART_RATE) {
 //
 //			// inform listeners
 //			if (listener != null){
@@ -171,145 +169,83 @@ public class PhoneSensors extends mySensor implements SensorEventListener{
 //			}
 //
 //		}
-
 		else if(event.sensor.getType() == Sensor.TYPE_LIGHT) {
-
 			// inform listeners
-			if (listener != null){
-				listener.onData(SensorType.LIGHT, event.timestamp,
-						Float.toString(event.values[0])
-				);
-			}
-
-		}
-
-		else if(event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
-
-			// inform listeners
-			if (listener != null){
-				listener.onData(SensorType.AMBIENT_TEMPERATURE, event.timestamp,
-						Float.toString(event.values[0])
-				);
-			}
-
-		}
-
-		else if(event.sensor.getType() == Sensor.TYPE_RELATIVE_HUMIDITY) {
-
-			// inform listeners
-			if (listener != null){
-				listener.onData(SensorType.RELATIVE_HUMIDITY, event.timestamp,
-						Float.toString(event.values[0])
-				);
-			}
-
-		}
-
-		else if(event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
-
-			// inform listeners
-			if (listener != null){
-
-				if(event.values.length > 3){
-					listener.onData(SensorType.ROTATION_VECTOR, event.timestamp,
-							Float.toString(event.values[0]) + ";" +
-							Float.toString(event.values[1]) + ";" +
-							Float.toString(event.values[2]) + ";" +
-							Float.toString(event.values[3])
-					);
-				} else {
-					listener.onData(SensorType.ROTATION_VECTOR, event.timestamp,
-							Float.toString(event.values[0]) + ";" +
-							Float.toString(event.values[1]) + ";" +
-							Float.toString(event.values[2])
-					);
-				}
-
-			}
-
-		}
-
-		else if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
-
-			// inform listeners
-			if (listener != null){
-				listener.onData(SensorType.GYROSCOPE, event.timestamp,
-					Float.toString(event.values[0]) + ";" +
-					Float.toString(event.values[1]) + ";" +
-					Float.toString(event.values[2])
-				);
-			}
-
-		}
-
-		else if(event.sensor.getType() == Sensor.TYPE_PRESSURE) {
-
-			// inform listeners
-			if (listener != null){
-				listener.onData(SensorType.PRESSURE, event.timestamp,
+			listener.onData(SensorType.LIGHT, event.timestamp,
 					Float.toString(event.values[0])
+			);
+		} else if(event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
+			// inform listeners
+			listener.onData(SensorType.AMBIENT_TEMPERATURE, event.timestamp,
+					Float.toString(event.values[0])
+			);
+		} else if(event.sensor.getType() == Sensor.TYPE_RELATIVE_HUMIDITY) {
+			// inform listeners
+			listener.onData(SensorType.RELATIVE_HUMIDITY, event.timestamp,
+					Float.toString(event.values[0])
+			);
+		} else if(event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
+			// inform listeners
+			if(event.values.length > 3){
+				listener.onData(SensorType.ROTATION_VECTOR, event.timestamp,
+						Float.toString(event.values[0]) + ";" +
+						Float.toString(event.values[1]) + ";" +
+						Float.toString(event.values[2]) + ";" +
+						Float.toString(event.values[3])
+				);
+			} else {
+				listener.onData(SensorType.ROTATION_VECTOR, event.timestamp,
+						Float.toString(event.values[0]) + ";" +
+						Float.toString(event.values[1]) + ";" +
+						Float.toString(event.values[2])
 				);
 			}
-
-		}
-
-		else if(event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
-
+		} else if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
 			// inform listeners
-			if (listener != null){
-				listener.onData(SensorType.LINEAR_ACCELERATION, event.timestamp,
+			listener.onData(SensorType.GYROSCOPE, event.timestamp,
+				Float.toString(event.values[0]) + ";" +
+				Float.toString(event.values[1]) + ";" +
+				Float.toString(event.values[2])
+			);
+		} else if(event.sensor.getType() == Sensor.TYPE_PRESSURE) {
+			// inform listeners
+			listener.onData(SensorType.PRESSURE, event.timestamp,
+				Float.toString(event.values[0])
+			);
+		} else if(event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
+			// inform listeners
+			listener.onData(SensorType.LINEAR_ACCELERATION, event.timestamp,
+				Float.toString(event.values[0]) + ";" +
+				Float.toString(event.values[1]) + ";" +
+				Float.toString(event.values[2])
+			);
+		} else if(event.sensor.getType() == Sensor.TYPE_GRAVITY) {
+			// inform listeners
+			listener.onData(SensorType.GRAVITY, event.timestamp,
 					Float.toString(event.values[0]) + ";" +
 					Float.toString(event.values[1]) + ";" +
 					Float.toString(event.values[2])
-				);
-			}
-
-		}
-
-		else if(event.sensor.getType() == Sensor.TYPE_GRAVITY) {
-
+			);
+        } else if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
 			// inform listeners
-            if (listener != null){
-                listener.onData(SensorType.GRAVITY, event.timestamp,
-                        Float.toString(event.values[0]) + ";" +
-                        Float.toString(event.values[1]) + ";" +
-                        Float.toString(event.values[2])
-                );
-            }
-
-        }
-
-		else if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-
-			// inform listeners
-			if (listener != null){
-				listener.onData(SensorType.ACCELEROMETER, event.timestamp,
-					Float.toString(event.values[0]) + ";" +
-					Float.toString(event.values[1]) + ";" +
-					Float.toString(event.values[2])
-				);
-			}
-
+			listener.onData(SensorType.ACCELEROMETER, event.timestamp,
+				Float.toString(event.values[0]) + ";" +
+				Float.toString(event.values[1]) + ";" +
+				Float.toString(event.values[2])
+			);
 			// keep a local copy (needed for orientation matrix)
 			System.arraycopy(event.values, 0, mGravity, 0, 3);
 
 			// NOTE:
 			// @see TYPE_MAGNETIC_FIELD
 			//updateOrientation();
-
-		}
-
-        else if(event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
-
+		} else if(event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
 			// inform listeners
-            if (listener != null){
-                listener.onData(SensorType.MAGNETIC_FIELD, event.timestamp,
-                        Float.toString(event.values[0]) + ";" +
-                        Float.toString(event.values[1]) + ";" +
-                        Float.toString(event.values[2])
-                );
-            }
-
+			listener.onData(SensorType.MAGNETIC_FIELD, event.timestamp,
+					Float.toString(event.values[0]) + ";" +
+					Float.toString(event.values[1]) + ";" +
+					Float.toString(event.values[2])
+			);
 			// keep a local copy (needed for orientation matrix)
 			System.arraycopy(event.values, 0, mGeomagnetic, 0, 3);
 
@@ -317,20 +253,17 @@ public class PhoneSensors extends mySensor implements SensorEventListener{
 			// @see TYPE_ACCELEROMETER
 			// only MAG updates the current orientation as MAG is usually slower than ACC and this reduces the file-footprint
 			updateOrientation(event.timestamp);
-
-        }
-
-        else if(event.sensor.getType() == Sensor.TYPE_GAME_ROTATION_VECTOR) {
+        } else if(event.sensor.getType() == Sensor.TYPE_GAME_ROTATION_VECTOR) {
         	// inform listeners
-        	if (listener != null) {
-        		listener.onData(SensorType.GAME_ROTATION_VECTOR, event.timestamp,
-						Float.toString(event.values[0]) + ";" +
-								Float.toString(event.values[1]) + ";" +
-								Float.toString(event.values[2])
-				);
-			}
+			listener.onData(SensorType.GAME_ROTATION_VECTOR, event.timestamp,
+					Float.toString(event.values[0]) + ";" +
+							Float.toString(event.values[1]) + ";" +
+							Float.toString(event.values[2])
+			);
+		} else if(event.sensor.getType() == Sensor.TYPE_STEP_DETECTOR) {
+        	//inform listeners
+			listener.onData(SensorType.STEP_DETECTOR, event.timestamp, "1.0");
 		}
-
     }
 
 	/** calculate orientation from acc and mag */
@@ -408,7 +341,6 @@ public class PhoneSensors extends mySensor implements SensorEventListener{
 
     @Override
     public void onResume(final Activity act) {
-
 		// attach as listener to each of the available sensors
         registerIfPresent(acc, SensorManager.SENSOR_DELAY_FASTEST);
       	registerIfPresent(grav, SensorManager.SENSOR_DELAY_FASTEST);
@@ -423,7 +355,7 @@ public class PhoneSensors extends mySensor implements SensorEventListener{
 		registerIfPresent(light, SensorManager.SENSOR_DELAY_FASTEST);
 		registerIfPresent(temperature, SensorManager.SENSOR_DELAY_FASTEST);
 		registerIfPresent(gameRotationVector, SensorManager.SENSOR_DELAY_FASTEST);
-
+		registerIfPresent(stepDetector, SensorManager.SENSOR_DELAY_FASTEST);
     }
 
 	private void registerIfPresent(final Sensor sens, final int delay) {
@@ -437,10 +369,8 @@ public class PhoneSensors extends mySensor implements SensorEventListener{
 
     @Override
     public void onPause(final Activity act) {
-
 		// detach from all events
 		sensorManager.unregisterListener(this);
-
     }
 
 }

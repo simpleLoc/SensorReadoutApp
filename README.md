@@ -71,6 +71,7 @@ For a list of EventIds and their meaning, have a look at `SensorType.java`.
 - Game Rotation Vector
 - EddystoneUID (with sent UUID)
 - DecawaveUWB
+- StepDetector
 
 ---
 ## Supported User-Tagging
