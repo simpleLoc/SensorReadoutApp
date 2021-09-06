@@ -44,6 +44,7 @@ import de.fhws.indoor.sensorreadout.sensors.DecawaveUWB;
 import de.fhws.indoor.sensorreadout.sensors.EddystoneUIDBeacon;
 import de.fhws.indoor.sensorreadout.sensors.GpsNew;
 import de.fhws.indoor.sensorreadout.sensors.GroundTruth;
+import de.fhws.indoor.sensorreadout.sensors.HeadingChange;
 import de.fhws.indoor.sensorreadout.sensors.PedestrianActivity;
 import de.fhws.indoor.sensorreadout.sensors.PhoneSensors;
 import de.fhws.indoor.sensorreadout.sensors.WiFi;
@@ -484,7 +485,16 @@ public class MainActivity extends AppCompatActivity {
             sensors.add(phoneSensors);
             phoneSensors.setListener(new mySensor.SensorListener(){
                 @Override public void onData(final long timestamp, final String csv) { return; }
-                @Override public void onData(final SensorType id, final long timestamp, final String csv) {add(id, csv, timestamp); }
+                @Override public void onData(final SensorType id, final long timestamp, final String csv) { add(id, csv, timestamp); }
+            });
+        }
+        if(activeSensors.contains("HEADING_CHANGE")) {
+            Log.i("Sensors", "Using HeadingChange estimator");
+            final HeadingChange headingChange = new HeadingChange(this);
+            sensors.add(headingChange);
+            headingChange.setListener(new mySensor.SensorListener(){
+                @Override public void onData(final long timestamp, final String csv) { add(SensorType.HEADING_CHANGE, csv, timestamp); }
+                @Override public void onData(final SensorType id, final long timestamp, final String csv) { return; }
             });
         }
         if(activeSensors.contains("GPS")) {
@@ -494,7 +504,7 @@ public class MainActivity extends AppCompatActivity {
             sensors.add(gps);
             gps.setListener(new mySensor.SensorListener(){
                 @Override public void onData(final long timestamp, final String csv) { add(SensorType.GPS, csv, timestamp); }
-                @Override public void onData(final SensorType id, final long timestamp, final String csv) {return; }
+                @Override public void onData(final SensorType id, final long timestamp, final String csv) { return; }
             });
         }
         if(activeSensors.contains("WIFI")) {

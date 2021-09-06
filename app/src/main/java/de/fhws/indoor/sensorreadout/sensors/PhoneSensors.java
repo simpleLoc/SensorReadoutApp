@@ -27,7 +27,7 @@ import de.fhws.indoor.sensorreadout.loggers.DataFolder;
  *
  * Created by Toni on 25.03.2015.
  */
-public class PhoneSensors extends mySensor implements SensorEventListener{
+public class PhoneSensors extends mySensor implements SensorEventListener {
 
 	//private static final int SENSOR_TYPE_HEARTRATE = 65562;
 

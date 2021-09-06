@@ -30,6 +30,7 @@ public enum SensorType {
     EDDYSTONE_UID(19),
     DECAWAVE_UWB(20),
     STEP_DETECTOR(21),
+    HEADING_CHANGE(22),
 
     PEDESTRIAN_ACTIVITY(50),
     GROUND_TRUTH(99),

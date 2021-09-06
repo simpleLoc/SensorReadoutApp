@@ -22,6 +22,7 @@
         <item>WiFi</item>
         <item>Bluetooth</item>
         <item>Phone (Accel, Gyro, Magnet)</item>
+        <item>Heading Change</item>
         <item>Decawave UWB</item>
     </string-array>
     <string-array name="prefActiveSensorsValues">
@@ -29,6 +30,7 @@
         <item>WIFI</item>
         <item>BLUETOOTH</item>
         <item>PHONE</item>
+        <item>HEADING_CHANGE</item>
         <item>DECAWAVE_UWB</item>
     </string-array>
     <string-array name="prefActiveSensorsDefault">
@@ -36,6 +38,7 @@
         <item>WIFI</item>
         <item>BLUETOOTH</item>
         <item>PHONE</item>
+        <item>HEADING_CHANGE</item>
     </string-array>
 
     <string name="prefActiveActions">Active Pedestrian-Actions</string>
