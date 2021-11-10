@@ -49,6 +49,7 @@ import de.fhws.indoor.sensorreadout.sensors.PedestrianActivity;
 import de.fhws.indoor.sensorreadout.sensors.PhoneSensors;
 import de.fhws.indoor.sensorreadout.sensors.WiFi;
 import de.fhws.indoor.sensorreadout.sensors.WiFiRTT;
+import de.fhws.indoor.sensorreadout.sensors.WiFiRTTScan;
 import de.fhws.indoor.sensorreadout.sensors.iBeacon;
 import de.fhws.indoor.sensorreadout.sensors.mySensor;
 import de.fhws.indoor.sensorreadout.sensors.SensorType;
@@ -526,6 +527,20 @@ public class MainActivity extends AppCompatActivity {
                 wifi.setListener(new mySensor.SensorListener() {
                     @Override public void onData(final long timestamp, final String csv) { add(SensorType.WIFI, csv, timestamp); }
                     @Override public void onData(final SensorType id, final long timestamp, final String csv) {return; }
+                });
+            }
+        }
+        if(activeSensors.contains("WIFIRTTSCAN")) {
+            if (WiFiRTTScan.isSupported(this)) {
+                if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.P)
+                    return;
+                Log.i("Sensors", "Using WiFiRTTScan");
+                final WiFiRTTScan wiFiRTTScan = new WiFiRTTScan(this);
+                sensors.add(wiFiRTTScan);
+                // log wifi RTT using sensor number 17
+                wiFiRTTScan.setListener(new mySensor.SensorListener() {
+                    @Override public void onData(final long timestamp, final String csv) { add(SensorType.WIFIRTT, csv, timestamp); }
+                    @Override public void onData(final SensorType id, final long timestamp, final String csv) { add(SensorType.WIFIRTT, csv, timestamp); }
                 });
             }
         }

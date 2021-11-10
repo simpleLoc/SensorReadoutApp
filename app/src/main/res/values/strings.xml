@@ -20,6 +20,7 @@
     <string-array name="prefActiveSensorsEntries">
         <item>GPS</item>
         <item>WiFi</item>
+        <item>WiFi RTT Scan</item>
         <item>Bluetooth</item>
         <item>Phone (Accel, Gyro, Magnet)</item>
         <item>Heading Change</item>
@@ -28,6 +29,7 @@
     <string-array name="prefActiveSensorsValues">
         <item>GPS</item>
         <item>WIFI</item>
+        <item>WIFIRTTSCAN</item>
         <item>BLUETOOTH</item>
         <item>PHONE</item>
         <item>HEADING_CHANGE</item>
