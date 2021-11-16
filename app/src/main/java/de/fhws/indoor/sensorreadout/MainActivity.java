@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.location.LocationManager;
 import android.media.MediaPlayer;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -38,6 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import de.fhws.indoor.sensorreadout.helpers.WifiScanProvider;
 import de.fhws.indoor.sensorreadout.loggers.Logger;
 import de.fhws.indoor.sensorreadout.loggers.OrderedLogger;
 import de.fhws.indoor.sensorreadout.sensors.DecawaveUWB;
@@ -48,7 +50,6 @@ import de.fhws.indoor.sensorreadout.sensors.HeadingChange;
 import de.fhws.indoor.sensorreadout.sensors.PedestrianActivity;
 import de.fhws.indoor.sensorreadout.sensors.PhoneSensors;
 import de.fhws.indoor.sensorreadout.sensors.WiFi;
-import de.fhws.indoor.sensorreadout.sensors.WiFiRTT;
 import de.fhws.indoor.sensorreadout.sensors.WiFiRTTScan;
 import de.fhws.indoor.sensorreadout.sensors.iBeacon;
 import de.fhws.indoor.sensorreadout.sensors.mySensor;
@@ -56,6 +57,8 @@ import de.fhws.indoor.sensorreadout.sensors.SensorType;
 
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final long DEFAULT_WIFI_SCAN_INTERVAL = (Build.VERSION.SDK_INT == 28 ? 30 : 1);
 
     MediaPlayer mpStart;
     MediaPlayer mpStop;
@@ -149,7 +152,8 @@ public class MainActivity extends AppCompatActivity {
         btnStart.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
 
-                if(!isInitialized){
+                if(!isInitialized) {
+                    if(!runPreStartChecks()) { return; }
                     start();
                     isInitialized = true;
                     playSound(mpStart);
@@ -167,8 +171,7 @@ public class MainActivity extends AppCompatActivity {
                     //Disable the spinners
                     groundSpinner.setEnabled(false);
                     pathSpinner.setEnabled(false);
-                }
-                else{
+                } else {
                     playSound(mpFailure);
                 }
             }
@@ -469,6 +472,8 @@ public class MainActivity extends AppCompatActivity {
         sensors.clear();
 
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        long wifiScanIntervalSec = Long.parseLong(preferences.getString("prefWifiScanIntervalSec", Long.toString(DEFAULT_WIFI_SCAN_INTERVAL)));
+        final WifiScanProvider wifiScanProvider = new WifiScanProvider(this, wifiScanIntervalSec);
         Set<String> activeSensors = preferences.getStringSet("prefActiveSensors", new HashSet<String>());
 
         if(activeSensors.contains("PHONE")) {
@@ -509,33 +514,21 @@ public class MainActivity extends AppCompatActivity {
             });
         }
         if(activeSensors.contains("WIFI")) {
-            boolean useWifiFtm = preferences.getBoolean("prefUseWifiFTM", false);
-            if(useWifiFtm && WiFiRTT.isSupported(this)) {
-                Log.i("Sensors", "Using Wifi[FTM]");
-                // log wifi RTT using sensor number 17
-                final WiFiRTT wifirtt = new WiFiRTT(this);
-                sensors.add(wifirtt);
-                wifirtt.setListener(new mySensor.SensorListener() {
-                    @Override public void onData(final long timestamp, final String csv) { add(SensorType.WIFIRTT, csv, timestamp); }
-                    @Override public void onData(final SensorType id, final long timestamp, final String csv) { add(SensorType.WIFIRTT, csv, timestamp); }
-                });
-            } else {
-                Log.i("Sensors", "Using Wifi");
-                // log wifi using sensor number 8
-                final WiFi wifi = new WiFi(this);
-                sensors.add(wifi);
-                wifi.setListener(new mySensor.SensorListener() {
-                    @Override public void onData(final long timestamp, final String csv) { add(SensorType.WIFI, csv, timestamp); }
-                    @Override public void onData(final SensorType id, final long timestamp, final String csv) {return; }
-                });
-            }
+            Log.i("Sensors", "Using Wifi");
+            // log wifi using sensor number 8
+            final WiFi wifi = new WiFi(wifiScanProvider);
+            sensors.add(wifi);
+            wifi.setListener(new mySensor.SensorListener() {
+                @Override public void onData(final long timestamp, final String csv) { add(SensorType.WIFI, csv, timestamp); }
+                @Override public void onData(final SensorType id, final long timestamp, final String csv) {return; }
+            });
         }
         if(activeSensors.contains("WIFIRTTSCAN")) {
             if (WiFiRTTScan.isSupported(this)) {
                 if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.P)
                     return;
                 Log.i("Sensors", "Using WiFiRTTScan");
-                final WiFiRTTScan wiFiRTTScan = new WiFiRTTScan(this);
+                final WiFiRTTScan wiFiRTTScan = new WiFiRTTScan(this, wifiScanProvider);
                 sensors.add(wiFiRTTScan);
                 // log wifi RTT using sensor number 17
                 wiFiRTTScan.setListener(new mySensor.SensorListener() {
@@ -618,6 +611,45 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Method that checks whether the Recording can/should be started.
+     */
+    private boolean runPreStartChecks() {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        Set<String> activeSensors = preferences.getStringSet("prefActiveSensors", new HashSet<String>());
+        if(activeSensors.contains("WIFIRTTSCAN") && !WiFiRTTScan.isSupported(this)) {
+            new AlertDialog.Builder(this)
+                    .setMessage("This smartphone does not support WifiRTT")
+                    .show();
+            return false;
+        }
+        if(activeSensors.contains("WIFI") || activeSensors.contains("WIFIRTTSCAN")) {
+            if(Build.VERSION.SDK_INT == 28) { // there is no way to scan wifi in Android 9
+                new AlertDialog.Builder(this)
+                        .setMessage("Android 9 is not supported for Wifi-Scanning!")
+                        .show();
+                return false;
+            }
+            WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+            boolean scanThrottleActive = false;
+            try { // since android 9, wifi scan speed is crippled
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    scanThrottleActive = wifiManager.isScanThrottleEnabled();
+                } else {
+                    scanThrottleActive = (Settings.Global.getInt(this.getContentResolver(), "wifi_scan_throttle_enabled") == 1);
+                }
+            } catch (Settings.SettingNotFoundException e) {
+                e.printStackTrace();
+            }
+            if(scanThrottleActive) {
+                new AlertDialog.Builder(this)
+                        .setMessage("A wifi sensor is requested, but your Smartphone settings cripple wifi scanning!")
+                        .show();
+                return false;
+            }
+        }
+        return true;
+    }
 
     private void playSound(MediaPlayer player) {
         if(player.isPlaying()) {

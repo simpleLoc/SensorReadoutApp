@@ -8,11 +8,6 @@
         app:key="prefActiveSensors"
         app:summary="@string/prefActiveSensorsSummary"
         app:title="@string/prefActiveSensors" />
-    <SwitchPreferenceCompat
-        app:defaultValue="false"
-        app:key="prefUseWifiFTM"
-        app:title="Use WiFi FTM"
-        app:summary="Use FTM instead of conventional WiFi scanning"/>
     <MultiSelectListPreference
         app:entries="@array/prefActiveActionsEntries"
         app:entryValues="@array/prefActiveActionsValues"
@@ -20,6 +15,11 @@
         app:key="prefActiveActions"
         app:summary="@string/prefActiveActionsSummary"
         app:title="@string/prefActiveActions" />
+    <EditTextPreference
+        app:key="prefWifiScanIntervalSec"
+        app:singleLine="true"
+        app:summary="Interval (sec) at which Wifi-Scans are attempted."
+        app:title="Wifi Scan Interval (sec)" />
     <EditTextPreference
         app:defaultValue="AA:BB:CC:DD:EE:FF"
         app:key="prefDecawaveUWBTagMacAddress"

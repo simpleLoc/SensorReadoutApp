@@ -28,74 +28,43 @@ import java.util.TimerTask;
 import java.util.concurrent.Executor;
 
 import de.fhws.indoor.sensorreadout.MyException;
+import de.fhws.indoor.sensorreadout.helpers.WifiScanProvider;
 
 /**
  * Wifi RTT sensor exporting time-of-flight measurements.
  * @author Steffen Kastner
+ * @author Markus Ebner
  */
-public class WiFiRTTScan extends mySensor {
+public class WiFiRTTScan extends mySensor implements WifiScanProvider.WifiScanCallback {
     private final String TAG = "WiFiRTTScan";
 
-    private final Activity act;
-    private final WifiManager wifiManager;
+    private final Activity activity;
     private final WifiRttManager rttManager;
+    private final WifiScanProvider wifiScanProvider;
     private final Executor mainExecutor;
 
     private Timer rangeTimer;
-    private final TimerTask rangingTask = new TimerTask() {
-        @RequiresApi(api = Build.VERSION_CODES.P)
-        @Override
-        public void run() {
-            startRanging();
-        }
-    };
-    private final RangingResultCallback rangeCallback;
-
-    private Timer scanTimer;
-    private final TimerTask scanTask = new TimerTask() {
-        @Override
-        public void run() {
-            try {
-                wifiManager.startScan();
-            } catch (MyException e) {
-                Log.e(TAG, e.getMessage());
+    private TimerTask rangingTask() {
+        return new TimerTask() {
+            @RequiresApi(api = Build.VERSION_CODES.P)
+            @Override
+            public void run() {
+                startRanging();
             }
-        }
-    };
+        };
+    }
+    private final RangingResultCallback rangeCallback;
 
     private final HashMap<String, ScanResult> rttEnabledAPs = new HashMap<>();
 
-
     @RequiresApi(api = Build.VERSION_CODES.P)
-    public WiFiRTTScan(final Activity act) {
-        this.act = act;
-        this.wifiManager = (WifiManager) act.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        this.rttManager = (WifiRttManager) act.getSystemService(Context.WIFI_RTT_RANGING_SERVICE);
-        this.mainExecutor = act.getMainExecutor();
-
-        IntentFilter scanAvailableFilter = new IntentFilter();
-        scanAvailableFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
-        act.registerReceiver(new BroadcastReceiver() {
-            @RequiresApi(api = Build.VERSION_CODES.M)
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                boolean success = intent.getBooleanExtra(
-                        WifiManager.EXTRA_RESULTS_UPDATED, false);
-
-                if (!success)
-                    return;
-
-                List<ScanResult> srs = wifiManager.getScanResults();
-                for (ScanResult sr : srs) {
-                    if(sr.is80211mcResponder() && !rttEnabledAPs.containsKey(sr.BSSID)) {
-                        Log.i(TAG, "Found new RTT-enabled AP: " + sr.BSSID);
-                        rttEnabledAPs.put(sr.BSSID, sr);
-                    }
-                }
-            }
-        }, scanAvailableFilter);
-
+    public WiFiRTTScan(Activity activity, WifiScanProvider wifiScanProvider) {
+        this.activity = activity;
+        this.wifiScanProvider = wifiScanProvider;
         this.rangeCallback = new WiFiRTTScanRangingCallback();
+
+        this.rttManager = (WifiRttManager) activity.getSystemService(Context.WIFI_RTT_RANGING_SERVICE);
+        this.mainExecutor = activity.getMainExecutor();
     }
 
     @Override
@@ -109,17 +78,15 @@ public class WiFiRTTScan extends mySensor {
     }
 
     private void startScanningAndRanging() {
-        // try to scan all 30s
-        scanTimer = new Timer();
-        scanTimer.scheduleAtFixedRate(scanTask, 0, 30 * 1000);
+        wifiScanProvider.registerCallback(this);
 
         // range to all available APs all 200ms
         rangeTimer = new Timer();
-        rangeTimer.scheduleAtFixedRate(rangingTask, 0, 200);
+        rangeTimer.scheduleAtFixedRate(rangingTask(), 0, 200);
     }
 
     private void stopScanningAndRanging() {
-        scanTimer.cancel();
+        wifiScanProvider.unregisterCallback(this);
         rangeTimer.cancel();
     }
 
@@ -141,7 +108,7 @@ public class WiFiRTTScan extends mySensor {
             cnt++;
         }
 
-        if (ActivityCompat.checkSelfPermission(act, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Log.e(TAG, "Can not start ranging. Permission not granted");
             stopScanningAndRanging();
         } else {
@@ -152,6 +119,16 @@ public class WiFiRTTScan extends mySensor {
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    @Override
+    public void onScanResult(List<ScanResult> scanResults) {
+        for(ScanResult sr : scanResults) {
+            if(sr.is80211mcResponder() && !rttEnabledAPs.containsKey(sr.BSSID)) {
+                Log.i(TAG, "Found new RTT-enabled AP: " + sr.BSSID);
+                rttEnabledAPs.put(sr.BSSID, sr);
+            }
+        }
+    }
 
 
     // result callback
