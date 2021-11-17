@@ -22,19 +22,20 @@ import java.util.TimerTask;
  * @author Markus Ebner
  */
 public class WifiScanProvider {
-    private static final String TAG = "";
+    private static final String TAG = "WifiScanProvider";
 
     public interface WifiScanCallback {
         void onScanResult(List<ScanResult> scanResults);
     };
 
-    private List<WifiScanCallback> scanCallbacks = new ArrayList<>();
-    private Activity activity;
-    private long scanIntervalSec;
-    IntentFilter scanAvailableFilter = new IntentFilter();
+    private final Activity activity;
+    private final long scanIntervalSec;
+    private final WifiManager wifiManager;
+    private final List<WifiScanCallback> scanCallbacks = new ArrayList<>();
+    private final IntentFilter scanAvailableFilter = new IntentFilter();
+
     // scan state
     private boolean currentlyScanning = false;
-    private WifiManager wifiManager;
     private Timer scanTimer = null;
 
     public WifiScanProvider(Activity activity, long scanIntervalSec) {

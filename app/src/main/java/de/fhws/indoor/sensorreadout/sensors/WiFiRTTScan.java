@@ -20,6 +20,7 @@ import android.util.Log;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -105,6 +106,7 @@ public class WiFiRTTScan extends mySensor implements WifiScanProvider.WifiScanCa
                 cnt = 0;
             }
             builders.getLast().addAccessPoint(sr);
+//            builders.getLast().addWifiAwarePeer(MacAddress.fromString(sr.BSSID));
             cnt++;
         }
 
@@ -124,7 +126,8 @@ public class WiFiRTTScan extends mySensor implements WifiScanProvider.WifiScanCa
     public void onScanResult(List<ScanResult> scanResults) {
         for(ScanResult sr : scanResults) {
             if(sr.is80211mcResponder() && !rttEnabledAPs.containsKey(sr.BSSID)) {
-                Log.i(TAG, "Found new RTT-enabled AP: " + sr.BSSID);
+                sr.channelWidth = ScanResult.CHANNEL_WIDTH_20MHZ;
+                Log.i(TAG, "Found new RTT-enabled ("+ sr.channelWidth+") AP: " + sr.BSSID);
                 rttEnabledAPs.put(sr.BSSID, sr);
             }
         }
