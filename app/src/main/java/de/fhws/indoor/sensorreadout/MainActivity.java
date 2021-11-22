@@ -37,7 +37,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import de.fhws.indoor.sensorreadout.helpers.WifiScanProvider;
 import de.fhws.indoor.sensorreadout.loggers.Logger;
@@ -78,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
     private TableLayout activityButtonContainer;
     private HashMap<PedestrianActivity, PedestrianActivityButton> activityButtons = new HashMap<>();
     private PedestrianActivity currentPedestrianActivity = PedestrianActivity.STANDING;
+    private Timer statisticsTimer = null;
 
     private int groundTruthCounter = 0;
     private boolean isInitialized = false;
@@ -266,14 +270,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void start() {
-        loadCounterAny = 0;
         logger.start(new Logger.FileMetadata(metaPerson, metaComment));
         final TextView txt = (TextView) findViewById(R.id.txtFile);
         txt.setText(logger.getName());
         for (final mySensor s : sensors) {s.onResume(this);}
+        statisticsTimer = new Timer();
+        statisticsTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                updateStatistics(SystemClock.elapsedRealtimeNanos());
+            }
+        }, 250, 250);
     }
 
     private void stop() {
+        statisticsTimer.cancel();
         for (final mySensor s : sensors) {s.onPause(this);}
         logger.stop();
         updateStatistics(SystemClock.elapsedRealtimeNanos());
@@ -283,47 +294,34 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /** new sensor data */
-    private int loadCounterWifi = 0;
-    private int loadCounterWifiRTT = 0;
-    private int loadCounterBeacon = 0;
-    private int loadCounterGPS = 0;
-    private int loadCounterAny = 0;
+    private volatile int loadCounterWifi = 0;
+    private volatile int loadCounterWifiRTT = 0;
+    private volatile int loadCounterBeacon = 0;
+    private volatile int loadCounterGPS = 0;
+    private volatile int loadCounterUWB = 0;
     private void add(final SensorType id, final String csv) {
         add(id, csv, SystemClock.elapsedRealtimeNanos());
     }
     private void add(final SensorType id, final String csv, final long timestamp) {
-
         logger.addCSV(id, timestamp, csv);
-
 
         // update UI for WIFI/BEACON/GPS
         if (id == SensorType.WIFI || id == SensorType.WIFIRTT || id == SensorType.IBEACON || id == SensorType.GPS) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-
-                    if (id == SensorType.WIFI) {
-                        final TextView txt = (TextView) findViewById(R.id.txtWifi);
-                        txt.setText(((++loadCounterWifi % 7) == 0) ? "wi" : "WI");
-                    } if (id == SensorType.WIFIRTT) {
-                        final TextView txt = (TextView) findViewById(R.id.txtWifiRTT);
-                        txt.setText(((++loadCounterWifiRTT % 7) == 0) ? "rtt" : "RTT");
-                    } else if (id == SensorType.IBEACON) {
-                        final TextView txt = (TextView) findViewById(R.id.txtBeacon);
-                        txt.setText(((++loadCounterBeacon % 2) == 0) ? "ib" : "IB");
-                    } else if (id == SensorType.GPS) {
-                        final TextView txt = (TextView) findViewById(R.id.txtGPS);
-                        txt.setText(((++loadCounterGPS % 2) == 0) ? "gps" : "GPS");
-                    }
+                    if (id == SensorType.WIFI) { loadCounterWifi++; }
+                    else if (id == SensorType.WIFIRTT) { loadCounterWifiRTT++; }
+                    else if (id == SensorType.IBEACON) { loadCounterBeacon++; }
+                    else if (id == SensorType.GPS) { loadCounterGPS++; }
+                    else if(id == SensorType.DECAWAVE_UWB) { loadCounterUWB++; }
                 }
             });
         }
-
-        // dump buffer stats every x entries
-        if (++loadCounterAny % 250 == 0) {
-            updateStatistics(timestamp);
-        }
-
+    }
+    private String makeStatusString(long evtCnt, String evtText) {
+        if(evtCnt == 0) { return "-"; }
+        return (evtCnt % 2 == 0) ? evtText.toLowerCase() : evtText.toUpperCase();
     }
 
     private void updateStatistics(final long timestamp) {
@@ -333,8 +331,19 @@ public class MainActivity extends AppCompatActivity {
                 final TextView txt = (TextView) findViewById(R.id.txtBuffer);
                 final float elapsedMinutes = (timestamp - logger.getStartTS()) / 1000.0f / 1000.0f / 1000.0f / 60.0f;
                 final int kBPerMin = (int) (logger.getSizeTotal() / 1024.0f / elapsedMinutes);
-                txt.setText((logger.getSizeTotal() / 1024) + "k, " + logger.getEventCnt() + ", " + kBPerMin + "kB/m");
+                txt.setText((logger.getSizeTotal() / 1024) + "kB, " + logger.getEventCnt() + "ev , " + kBPerMin + "kB/m");
                 prgCacheFillStatus.setProgress((int)(logger.getCacheLevel() * 1000));
+
+                final TextView txtWifi = (TextView) findViewById(R.id.txtWifi);
+                txtWifi.setText(makeStatusString(loadCounterWifi, "wi"));
+                final TextView txtWifiRTT = (TextView) findViewById(R.id.txtWifiRTT);
+                txtWifiRTT.setText(makeStatusString(loadCounterWifiRTT, "rtt"));
+                final TextView txtBeacon = (TextView) findViewById(R.id.txtBeacon);
+                txtBeacon.setText(makeStatusString(loadCounterBeacon, "ib"));
+                final TextView txtGPS = (TextView) findViewById(R.id.txtGPS);
+                txtGPS.setText(makeStatusString(loadCounterGPS, "gps"));
+                final TextView txtUWB = (TextView) findViewById(R.id.txtUWB);
+                txtUWB.setText(makeStatusString(loadCounterUWB, "uwb"));
             }
         });
     }
