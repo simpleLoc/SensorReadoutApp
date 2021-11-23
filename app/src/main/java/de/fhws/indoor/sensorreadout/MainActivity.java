@@ -91,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isInitialized = false;
 
     final private int MY_PERMISSIONS_REQUEST_READ_BT = 123;
+    final private int MY_PERMISSIONS_REQUEST_BT_SCAN = 124;
     final private int MY_PERMISSIONS_REQUEST_READ_HEART = 321;
 
     // file metadata
@@ -562,6 +563,7 @@ public class MainActivity extends AppCompatActivity {
             if(ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.ACCESS_FINE_LOCATION)) {
             } else {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_SCAN}, MY_PERMISSIONS_REQUEST_BT_SCAN);
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                         MY_PERMISSIONS_REQUEST_READ_BT);
