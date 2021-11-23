@@ -63,10 +63,14 @@ public class MainActivity extends AppCompatActivity {
 
     private static final long DEFAULT_WIFI_SCAN_INTERVAL = (Build.VERSION.SDK_INT == 28 ? 30 : 1);
 
+    // sounds
     MediaPlayer mpStart;
     MediaPlayer mpStop;
     MediaPlayer mpGround;
     MediaPlayer mpFailure;
+
+    // sensors
+    DecawaveUWB sensorUWB = null;
 
     private final ArrayList<mySensor> sensors = new ArrayList<mySensor>();
     //private final Logger logger = new Logger(this);
@@ -278,7 +282,7 @@ public class MainActivity extends AppCompatActivity {
         statisticsTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                updateStatistics(SystemClock.elapsedRealtimeNanos());
+                updateDiagnostics(SystemClock.elapsedRealtimeNanos());
             }
         }, 250, 250);
     }
@@ -287,7 +291,7 @@ public class MainActivity extends AppCompatActivity {
         statisticsTimer.cancel();
         for (final mySensor s : sensors) {s.onPause(this);}
         logger.stop();
-        updateStatistics(SystemClock.elapsedRealtimeNanos());
+        updateDiagnostics(SystemClock.elapsedRealtimeNanos());
         ((TextView) findViewById(R.id.txtWifi)).setText("-");
         ((TextView) findViewById(R.id.txtBeacon)).setText("-");
         ((TextView) findViewById(R.id.txtGPS)).setText("-");
@@ -324,7 +328,7 @@ public class MainActivity extends AppCompatActivity {
         return (evtCnt % 2 == 0) ? evtText.toLowerCase() : evtText.toUpperCase();
     }
 
-    private void updateStatistics(final long timestamp) {
+    private void updateDiagnostics(final long timestamp) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -343,7 +347,13 @@ public class MainActivity extends AppCompatActivity {
                 final TextView txtGPS = (TextView) findViewById(R.id.txtGPS);
                 txtGPS.setText(makeStatusString(loadCounterGPS, "gps"));
                 final TextView txtUWB = (TextView) findViewById(R.id.txtUWB);
-                txtUWB.setText(makeStatusString(loadCounterUWB, "uwb"));
+                if(sensorUWB != null) {
+                    if(sensorUWB.isConnectedToTag()) {
+                        txtUWB.setText(makeStatusString(loadCounterUWB, "uwb"));
+                    } else {
+                        txtUWB.setText(sensorUWB.isCurrentlyConnecting() ? "⌛" : "✖");
+                    }
+                }
             }
         });
     }
@@ -611,9 +621,9 @@ public class MainActivity extends AppCompatActivity {
         if (activeSensors.contains("DECAWAVE_UWB")) {
             Log.i("Sensors", "Using Decwave UWB");
 
-            final DecawaveUWB uwb = new DecawaveUWB(this);
-            sensors.add(uwb);
-            uwb.setListener(new mySensor.SensorListener() {
+            sensorUWB = new DecawaveUWB(this);
+            sensors.add(sensorUWB);
+            sensorUWB.setListener(new mySensor.SensorListener() {
                 @Override public void onData(final long timestamp, final String csv) { add(SensorType.DECAWAVE_UWB, csv, timestamp); }
                 @Override public void onData(final SensorType id, final long timestamp, final String csv) { add(id, csv, timestamp); }
             });

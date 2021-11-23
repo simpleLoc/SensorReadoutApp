@@ -36,6 +36,9 @@ import no.nordicsemi.android.ble.data.Data;
  */
 public class DecawaveUWB extends mySensor {
 
+    private boolean currentlyConnecting = false;
+    private boolean connectedToTag = false;
+
     private static class BleDataStream {
         private final Data _data;
         private int _pos;
@@ -126,9 +129,12 @@ public class DecawaveUWB extends mySensor {
 
         public void connectToDevice(BluetoothDevice device)
         {
+            currentlyConnecting = true;
             connect(device)
                     .retry(3, 100)
                     .useAutoConnect(false)
+                    .done((dev) -> {connectedToTag = true; currentlyConnecting = false;})
+                    .fail((a, b) -> currentlyConnecting = false)
                     .enqueue();
         }
 
@@ -166,6 +172,7 @@ public class DecawaveUWB extends mySensor {
                 protected void onDeviceDisconnected() {
                     _locationDataCharacteristic = null;
                     _locationModeCharacteristic = null;
+                    connectedToTag = false;
                 }
             };
         }
@@ -246,8 +253,7 @@ public class DecawaveUWB extends mySensor {
     private final BluetoothAdapter bluetoothAdapter;
     private final DecawaveManager decaManager;
 
-    public DecawaveUWB(final Activity act)
-    {
+    public DecawaveUWB(final Activity act) {
         BluetoothManager bluetoothManager = (BluetoothManager) act.getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();
 
@@ -275,5 +281,9 @@ public class DecawaveUWB extends mySensor {
     @Override
     public void onPause(Activity act) {
         decaManager.disconnect().enqueue();
+        connectedToTag = false;
     }
+
+    public boolean isConnectedToTag() { return connectedToTag; }
+    public boolean isCurrentlyConnecting() { return currentlyConnecting; }
 }
