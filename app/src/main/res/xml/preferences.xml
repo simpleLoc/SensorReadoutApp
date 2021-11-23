@@ -16,10 +16,11 @@
         app:summary="@string/prefActiveActionsSummary"
         app:title="@string/prefActiveActions" />
     <EditTextPreference
-        app:key="prefWifiScanIntervalSec"
+        app:key="prefWifiScanIntervalMSec"
+        app:defaultValue="0"
         app:singleLine="true"
-        app:summary="Interval (sec) at which Wifi-Scans are attempted."
-        app:title="Wifi Scan Interval (sec)" />
+        app:summary="Interval (ms) at which Wifi-Scans are attempted. 0 will attempt to start a new scan as soon as the previous is done."
+        app:title="Wifi Scan Interval (ms)" />
     <EditTextPreference
         app:defaultValue="AA:BB:CC:DD:EE:FF"
         app:key="prefDecawaveUWBTagMacAddress"

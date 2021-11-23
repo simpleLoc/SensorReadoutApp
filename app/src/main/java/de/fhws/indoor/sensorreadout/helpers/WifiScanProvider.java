@@ -29,7 +29,7 @@ public class WifiScanProvider {
     };
 
     private final Activity activity;
-    private final long scanIntervalSec;
+    private final long scanIntervalMSec;
     private final WifiManager wifiManager;
     private final List<WifiScanCallback> scanCallbacks = new ArrayList<>();
     private final IntentFilter scanAvailableFilter = new IntentFilter();
@@ -38,9 +38,9 @@ public class WifiScanProvider {
     private boolean currentlyScanning = false;
     private Timer scanTimer = null;
 
-    public WifiScanProvider(Activity activity, long scanIntervalSec) {
+    public WifiScanProvider(Activity activity, long scanIntervalMSec) {
         this.activity = activity;
-        this.scanIntervalSec = scanIntervalSec;
+        this.scanIntervalMSec = scanIntervalMSec;
         wifiManager = (WifiManager) activity.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         scanAvailableFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
     }
@@ -74,8 +74,10 @@ public class WifiScanProvider {
 
     private void stopScanning() {
         if(currentlyScanning) {
-            scanTimer.cancel();
-            scanTimer = null;
+            if(scanTimer != null) {
+                scanTimer.cancel();
+                scanTimer = null;
+            }
             activity.unregisterReceiver(scanResultUpdateReceiver);
             currentlyScanning = false;
         }
@@ -89,7 +91,7 @@ public class WifiScanProvider {
             wifiManager.disconnect();
             activity.registerReceiver(scanResultUpdateReceiver, scanAvailableFilter);
             scanTimer = new Timer();
-            scanTimer.scheduleAtFixedRate(scanTimerTask(), 0, scanIntervalSec * 1000);
+            scanTimer.scheduleAtFixedRate(scanTimerTask(), 0, Math.max(scanIntervalMSec, 50));
             currentlyScanning = true;
         }
     }
@@ -98,13 +100,7 @@ public class WifiScanProvider {
         return new TimerTask() {
             @Override
             public void run() {
-                try {
-                    if(wifiManager.startScan()) {
-                        Log.d(TAG, "Wifi Scan started");
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, e.getMessage());
-                }
+                runScan();
             }
         };
     }
@@ -117,6 +113,21 @@ public class WifiScanProvider {
 
             List<ScanResult> scanResults = wifiManager.getScanResults();
             notifyListeners(scanResults);
+            // if interval is set to 0, we try to start a new scan as soon as the previous one is done.
+            // in addition to that, we use the timer as backup (in case startScan() == false)
+            if(scanIntervalMSec == 0) {
+                runScan();
+            }
         }
     };
+
+    private void runScan() {
+        try {
+            if(wifiManager.startScan()) {
+                Log.d(TAG, "Wifi Scan started");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }
+    }
 }

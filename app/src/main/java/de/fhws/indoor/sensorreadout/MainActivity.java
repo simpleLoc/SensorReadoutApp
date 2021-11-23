@@ -495,8 +495,8 @@ public class MainActivity extends AppCompatActivity {
         sensors.clear();
 
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        long wifiScanIntervalSec = Long.parseLong(preferences.getString("prefWifiScanIntervalSec", Long.toString(DEFAULT_WIFI_SCAN_INTERVAL)));
-        final WifiScanProvider wifiScanProvider = new WifiScanProvider(this, wifiScanIntervalSec);
+        long wifiScanIntervalMSec = Long.parseLong(preferences.getString("prefWifiScanIntervalMSec", Long.toString(DEFAULT_WIFI_SCAN_INTERVAL)));
+        final WifiScanProvider wifiScanProvider = new WifiScanProvider(this, wifiScanIntervalMSec);
         Set<String> activeSensors = preferences.getStringSet("prefActiveSensors", new HashSet<String>());
 
         if(activeSensors.contains("PHONE")) {
