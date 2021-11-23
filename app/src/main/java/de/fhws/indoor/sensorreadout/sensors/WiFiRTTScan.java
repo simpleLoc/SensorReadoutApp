@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 import de.fhws.indoor.sensorreadout.MyException;
@@ -56,7 +57,7 @@ public class WiFiRTTScan extends mySensor implements WifiScanProvider.WifiScanCa
     }
     private final RangingResultCallback rangeCallback;
 
-    private final HashMap<String, ScanResult> rttEnabledAPs = new HashMap<>();
+    private final ConcurrentHashMap<String, ScanResult> rttEnabledAPs = new ConcurrentHashMap<>();
 
     @RequiresApi(api = Build.VERSION_CODES.P)
     public WiFiRTTScan(Activity activity, WifiScanProvider wifiScanProvider) {
@@ -95,7 +96,6 @@ public class WiFiRTTScan extends mySensor implements WifiScanProvider.WifiScanCa
     private void startRanging() {
         if (rttEnabledAPs.isEmpty())
             return;
-
 
         LinkedList<RangingRequest.Builder> builders = new LinkedList<>();
         builders.add(new RangingRequest.Builder());
