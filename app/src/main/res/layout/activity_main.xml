@@ -155,7 +155,7 @@
 
         <TextView
             android:id="@+id/txtUWB"
-            android:layout_width="30dp"
+            android:layout_width="32dp"
             android:layout_height="match_parent"
             android:text="-"
             android:textColor="#ffffff" />

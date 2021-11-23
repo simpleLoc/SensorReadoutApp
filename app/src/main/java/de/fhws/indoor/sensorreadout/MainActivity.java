@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.location.LocationManager;
 import android.media.MediaPlayer;
@@ -92,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
 
     final private int MY_PERMISSIONS_REQUEST_READ_BT = 123;
     final private int MY_PERMISSIONS_REQUEST_BT_SCAN = 124;
+    final private int MY_PERMISSIONS_REQUEST_BT_CONNECT = 125;
     final private int MY_PERMISSIONS_REQUEST_READ_HEART = 321;
 
     // file metadata
@@ -215,6 +217,7 @@ public class MainActivity extends AppCompatActivity {
 
                     btnGround.setText("Ground Truth");
                     stop();
+                    resetStatistics();
                     isInitialized = false;
                     playSound(mpStop);
 
@@ -304,6 +307,13 @@ public class MainActivity extends AppCompatActivity {
     private volatile int loadCounterBeacon = 0;
     private volatile int loadCounterGPS = 0;
     private volatile int loadCounterUWB = 0;
+    private void resetStatistics() {
+        loadCounterWifi = 0;
+        loadCounterWifiRTT = 0;
+        loadCounterBeacon = 0;
+        loadCounterGPS = 0;
+        loadCounterUWB = 0;
+    }
     private void add(final SensorType id, final String csv) {
         add(id, csv, SystemClock.elapsedRealtimeNanos());
     }
@@ -311,18 +321,11 @@ public class MainActivity extends AppCompatActivity {
         logger.addCSV(id, timestamp, csv);
 
         // update UI for WIFI/BEACON/GPS
-        if (id == SensorType.WIFI || id == SensorType.WIFIRTT || id == SensorType.IBEACON || id == SensorType.GPS) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (id == SensorType.WIFI) { loadCounterWifi++; }
-                    else if (id == SensorType.WIFIRTT) { loadCounterWifiRTT++; }
-                    else if (id == SensorType.IBEACON) { loadCounterBeacon++; }
-                    else if (id == SensorType.GPS) { loadCounterGPS++; }
-                    else if(id == SensorType.DECAWAVE_UWB) { loadCounterUWB++; }
-                }
-            });
-        }
+        if(id == SensorType.WIFI) { runOnUiThread(() -> loadCounterWifi++); }
+        if(id == SensorType.WIFIRTT) { runOnUiThread(() -> loadCounterWifiRTT++); }
+        if(id == SensorType.IBEACON) { runOnUiThread(() -> loadCounterBeacon++); }
+        if(id == SensorType.GPS) { runOnUiThread(() -> loadCounterGPS++); }
+        if(id == SensorType.DECAWAVE_UWB) { runOnUiThread(() -> loadCounterUWB++); }
     }
     private String makeStatusString(long evtCnt, String evtText) {
         if(evtCnt == 0) { return "-"; }
@@ -560,13 +563,11 @@ public class MainActivity extends AppCompatActivity {
         if(activeSensors.contains("BLUETOOTH")) {
             Log.i("Sensors", "Using Bluetooth");
             // bluetooth permission
-            if(ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.ACCESS_FINE_LOCATION)) {
-            } else {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_SCAN}, MY_PERMISSIONS_REQUEST_BT_SCAN);
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                        MY_PERMISSIONS_REQUEST_READ_BT);
+            if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{ Manifest.permission.ACCESS_FINE_LOCATION }, MY_PERMISSIONS_REQUEST_READ_BT);
+            }
+            if(ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{ Manifest.permission.BLUETOOTH_SCAN }, MY_PERMISSIONS_REQUEST_BT_SCAN);
             }
 
             LocationManager lm = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
@@ -621,8 +622,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (activeSensors.contains("DECAWAVE_UWB")) {
-            Log.i("Sensors", "Using Decwave UWB");
+            if(ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{ Manifest.permission.BLUETOOTH_CONNECT }, MY_PERMISSIONS_REQUEST_BT_CONNECT);
+            }
 
+            Log.i("Sensors", "Using Decwave UWB");
             sensorUWB = new DecawaveUWB(this);
             sensors.add(sensorUWB);
             sensorUWB.setListener(new mySensor.SensorListener() {
