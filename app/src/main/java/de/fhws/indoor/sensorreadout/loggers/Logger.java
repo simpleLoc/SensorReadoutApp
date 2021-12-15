@@ -6,10 +6,9 @@ import android.os.SystemClock;
 import androidx.annotation.NonNull;
 
 import java.util.Date;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import de.fhws.indoor.sensorreadout.sensors.SensorType;
+import de.fhws.indoor.libsmartphonesensors.sensors.SensorType;
 
 /**
  * Base-Class for all Logger implementations.

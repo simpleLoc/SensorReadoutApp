@@ -19,7 +19,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
 import androidx.core.app.ActivityCompat;
-//import android.support.wearable.activity.WearableActivity;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
@@ -33,31 +32,32 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.view.ViewGroup.LayoutParams;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import de.fhws.indoor.sensorreadout.helpers.WifiScanProvider;
+import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.helpers.WifiScanProvider;
+import de.fhws.indoor.sensorreadout.loggers.DataFolder;
 import de.fhws.indoor.sensorreadout.loggers.Logger;
 import de.fhws.indoor.sensorreadout.loggers.OrderedLogger;
-import de.fhws.indoor.sensorreadout.sensors.DecawaveUWB;
-import de.fhws.indoor.sensorreadout.sensors.EddystoneUIDBeacon;
-import de.fhws.indoor.sensorreadout.sensors.GpsNew;
-import de.fhws.indoor.sensorreadout.sensors.GroundTruth;
-import de.fhws.indoor.sensorreadout.sensors.HeadingChange;
-import de.fhws.indoor.sensorreadout.sensors.PedestrianActivity;
-import de.fhws.indoor.sensorreadout.sensors.PhoneSensors;
-import de.fhws.indoor.sensorreadout.sensors.WiFi;
-import de.fhws.indoor.sensorreadout.sensors.WiFiRTTScan;
-import de.fhws.indoor.sensorreadout.sensors.iBeacon;
-import de.fhws.indoor.sensorreadout.sensors.mySensor;
-import de.fhws.indoor.sensorreadout.sensors.SensorType;
+import de.fhws.indoor.libsmartphonesensors.sensors.DecawaveUWB;
+import de.fhws.indoor.libsmartphonesensors.sensors.EddystoneUIDBeacon;
+import de.fhws.indoor.libsmartphonesensors.sensors.GpsNew;
+import de.fhws.indoor.libsmartphonesensors.sensors.GroundTruth;
+import de.fhws.indoor.libsmartphonesensors.sensors.HeadingChange;
+import de.fhws.indoor.libsmartphonesensors.sensors.PedestrianActivity;
+import de.fhws.indoor.libsmartphonesensors.sensors.PhoneSensors;
+import de.fhws.indoor.libsmartphonesensors.sensors.WiFi;
+import de.fhws.indoor.libsmartphonesensors.sensors.WiFiRTTScan;
+import de.fhws.indoor.libsmartphonesensors.sensors.iBeacon;
+import de.fhws.indoor.libsmartphonesensors.sensors.SensorType;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -71,9 +71,10 @@ public class MainActivity extends AppCompatActivity {
     MediaPlayer mpFailure;
 
     // sensors
+    DecawaveUWB.Config sensorUWBConfig = null;
     DecawaveUWB sensorUWB = null;
 
-    private final ArrayList<mySensor> sensors = new ArrayList<mySensor>();
+    private final ArrayList<ASensor> sensors = new ArrayList<>();
     //private final Logger logger = new Logger(this);
     //private final LoggerRAM logger = new LoggerRAM(this);
     private final Logger logger = new OrderedLogger(this);
@@ -154,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
         // log GroundTruth ButtonClicks using sensor number 99
         final GroundTruth grndTruth = new GroundTruth(this);
         sensors.add(grndTruth);
-        grndTruth.setListener(new mySensor.SensorListener() {
+        grndTruth.setListener(new ASensor.SensorListener() {
             @Override public void onData(final long timestamp, final String csv) { return; }
             @Override public void onData(SensorType id, final long timestamp, final String csv) {add(id, csv, timestamp); }
         });
@@ -281,7 +282,7 @@ public class MainActivity extends AppCompatActivity {
         logger.start(new Logger.FileMetadata(metaPerson, metaComment));
         final TextView txt = (TextView) findViewById(R.id.txtFile);
         txt.setText(logger.getName());
-        for (final mySensor s : sensors) {s.onResume(this);}
+        for (final ASensor s : sensors) {s.onResume(this);}
         statisticsTimer = new Timer();
         statisticsTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
@@ -293,7 +294,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void stop() {
         statisticsTimer.cancel();
-        for (final mySensor s : sensors) {s.onPause(this);}
+        for (final ASensor s : sensors) {s.onPause(this);}
         logger.stop();
         updateDiagnostics(SystemClock.elapsedRealtimeNanos());
         ((TextView) findViewById(R.id.txtWifi)).setText("-");
@@ -349,6 +350,7 @@ public class MainActivity extends AppCompatActivity {
                 final TextView txtBeacon = (TextView) findViewById(R.id.txtBeacon);
                 txtBeacon.setText(makeStatusString(loadCounterBeacon, "ib"));
                 final TextView txtGPS = (TextView) findViewById(R.id.txtGPS);
+
                 txtGPS.setText(makeStatusString(loadCounterGPS, "gps"));
                 final TextView txtUWB = (TextView) findViewById(R.id.txtUWB);
                 if(sensorUWB != null) {
@@ -479,7 +481,7 @@ public class MainActivity extends AppCompatActivity {
                     if(isInitialized) {
                         setActivityBtn(button.getPedestrianActivity(), true);
                     }
-                    else{
+                    else {
                         playSound(mpFailure);
                     }
                 }
@@ -510,9 +512,12 @@ public class MainActivity extends AppCompatActivity {
 //            }
 
             //all Phone-Sensors (Accel, Gyro, Magnet, ...)
+            final DataFolder folder = new DataFolder(this, "sensorOutFiles");
+            final File file = new File(folder.getFolder(), "vendors.txt");
             final PhoneSensors phoneSensors = new PhoneSensors(this);
+            phoneSensors.dumpVendors(file);
             sensors.add(phoneSensors);
-            phoneSensors.setListener(new mySensor.SensorListener(){
+            phoneSensors.setListener(new ASensor.SensorListener(){
                 @Override public void onData(final long timestamp, final String csv) { return; }
                 @Override public void onData(final SensorType id, final long timestamp, final String csv) { add(id, csv, timestamp); }
             });
@@ -521,7 +526,7 @@ public class MainActivity extends AppCompatActivity {
             Log.i("Sensors", "Using HeadingChange estimator");
             final HeadingChange headingChange = new HeadingChange(this);
             sensors.add(headingChange);
-            headingChange.setListener(new mySensor.SensorListener(){
+            headingChange.setListener(new ASensor.SensorListener(){
                 @Override public void onData(final long timestamp, final String csv) { add(SensorType.HEADING_CHANGE, csv, timestamp); }
                 @Override public void onData(final SensorType id, final long timestamp, final String csv) { return; }
             });
@@ -531,7 +536,7 @@ public class MainActivity extends AppCompatActivity {
             //log gps using sensor number 16
             final GpsNew gps = new GpsNew(this);
             sensors.add(gps);
-            gps.setListener(new mySensor.SensorListener(){
+            gps.setListener(new ASensor.SensorListener(){
                 @Override public void onData(final long timestamp, final String csv) { add(SensorType.GPS, csv, timestamp); }
                 @Override public void onData(final SensorType id, final long timestamp, final String csv) { return; }
             });
@@ -541,7 +546,7 @@ public class MainActivity extends AppCompatActivity {
             // log wifi using sensor number 8
             final WiFi wifi = new WiFi(wifiScanProvider);
             sensors.add(wifi);
-            wifi.setListener(new mySensor.SensorListener() {
+            wifi.setListener(new ASensor.SensorListener() {
                 @Override public void onData(final long timestamp, final String csv) { add(SensorType.WIFI, csv, timestamp); }
                 @Override public void onData(final SensorType id, final long timestamp, final String csv) {return; }
             });
@@ -554,7 +559,7 @@ public class MainActivity extends AppCompatActivity {
                 final WiFiRTTScan wiFiRTTScan = new WiFiRTTScan(this, wifiScanProvider);
                 sensors.add(wiFiRTTScan);
                 // log wifi RTT using sensor number 17
-                wiFiRTTScan.setListener(new mySensor.SensorListener() {
+                wiFiRTTScan.setListener(new ASensor.SensorListener() {
                     @Override public void onData(final long timestamp, final String csv) { add(SensorType.WIFIRTT, csv, timestamp); }
                     @Override public void onData(final SensorType id, final long timestamp, final String csv) { add(SensorType.WIFIRTT, csv, timestamp); }
                 });
@@ -594,7 +599,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             // log iBeacons using sensor number 9
-            final mySensor beacon;
+            final ASensor beacon;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 beacon = new iBeacon(this);
             } else {
@@ -604,17 +609,17 @@ public class MainActivity extends AppCompatActivity {
 
             if (beacon != null) {
                 sensors.add(beacon);
-                beacon.setListener(new mySensor.SensorListener() {
+                beacon.setListener(new ASensor.SensorListener() {
                     @Override public void onData(final long timestamp, final String csv) { add(SensorType.IBEACON, csv, timestamp); }
                     @Override public void onData(final SensorType id, final long timestamp, final String csv) {return; }
                 });
             }
 
-            final mySensor eddystone;
+            final ASensor eddystone;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 eddystone = new EddystoneUIDBeacon(this);
                 sensors.add(eddystone);
-                eddystone.setListener(new mySensor.SensorListener() {
+                eddystone.setListener(new ASensor.SensorListener() {
                     @Override public void onData(long timestamp, String csv) { add(SensorType.EDDYSTONE_UID, csv, timestamp); }
                     @Override public void onData(SensorType id, long timestamp, String csv) { return; }
                 });
@@ -627,9 +632,11 @@ public class MainActivity extends AppCompatActivity {
             }
 
             Log.i("Sensors", "Using Decwave UWB");
-            sensorUWB = new DecawaveUWB(this);
+            sensorUWBConfig = new DecawaveUWB.Config();
+            sensorUWBConfig.tagMacAddress = preferences.getString("prefDecawaveUWBTagMacAddress", "");
+            sensorUWB = new DecawaveUWB(this, sensorUWBConfig);
             sensors.add(sensorUWB);
-            sensorUWB.setListener(new mySensor.SensorListener() {
+            sensorUWB.setListener(new ASensor.SensorListener() {
                 @Override public void onData(final long timestamp, final String csv) { add(SensorType.DECAWAVE_UWB, csv, timestamp); }
                 @Override public void onData(final SensorType id, final long timestamp, final String csv) { add(id, csv, timestamp); }
             });

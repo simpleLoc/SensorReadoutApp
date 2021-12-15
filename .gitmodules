@@ -1,0 +1,3 @@
+[submodule "libSmartphoneSensors"]
+	path = libSmartphoneSensors
+	url = https://github.com/simpleLoc/libSmartphoneSensors.git

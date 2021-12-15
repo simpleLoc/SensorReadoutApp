@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import de.fhws.indoor.sensorreadout.MyException;
-import de.fhws.indoor.sensorreadout.sensors.SensorType;
 
 /**
  * Simple (ordered) RAM Logger.

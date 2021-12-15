@@ -32,6 +32,7 @@ android {
 dependencies {
     implementation 'com.google.android.material:material:1.0.0'
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation project(path: ':libSmartphoneSensors')
     testImplementation 'junit:junit:4.12'
     implementation 'androidx.appcompat:appcompat:1.0.0'
     implementation 'com.google.android.gms:play-services:12.0.1'
