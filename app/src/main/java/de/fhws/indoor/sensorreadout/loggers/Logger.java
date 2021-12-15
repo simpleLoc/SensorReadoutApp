@@ -8,7 +8,7 @@ import androidx.annotation.NonNull;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicLong;
 
-import de.fhws.indoor.libsmartphonesensors.sensors.SensorType;
+import de.fhws.indoor.libsmartphonesensors.SensorType;
 
 /**
  * Base-Class for all Logger implementations.

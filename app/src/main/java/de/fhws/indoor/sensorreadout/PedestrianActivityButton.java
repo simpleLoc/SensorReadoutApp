@@ -8,7 +8,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import de.fhws.indoor.libsmartphonesensors.sensors.PedestrianActivity;
+import de.fhws.indoor.libsmartphonesensors.PedestrianActivity;
 
 /**
  * Button used in the UI to represent a specific activity.

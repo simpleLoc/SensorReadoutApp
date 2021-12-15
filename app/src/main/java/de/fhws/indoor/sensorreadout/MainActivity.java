@@ -1,14 +1,10 @@
 package de.fhws.indoor.sensorreadout;
 
-import android.Manifest;
 import android.app.ActivityManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.location.LocationManager;
 import android.media.MediaPlayer;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -18,7 +14,7 @@ import android.os.SystemClock;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
-import androidx.core.app.ActivityCompat;
+
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
@@ -32,7 +28,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.view.ViewGroup.LayoutParams;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -42,22 +37,15 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import de.fhws.indoor.libsmartphonesensors.ASensor;
+import de.fhws.indoor.libsmartphonesensors.SensorManager;
 import de.fhws.indoor.libsmartphonesensors.helpers.WifiScanProvider;
-import de.fhws.indoor.sensorreadout.loggers.DataFolder;
 import de.fhws.indoor.sensorreadout.loggers.Logger;
 import de.fhws.indoor.sensorreadout.loggers.OrderedLogger;
 import de.fhws.indoor.libsmartphonesensors.sensors.DecawaveUWB;
-import de.fhws.indoor.libsmartphonesensors.sensors.EddystoneUIDBeacon;
-import de.fhws.indoor.libsmartphonesensors.sensors.GpsNew;
 import de.fhws.indoor.libsmartphonesensors.sensors.GroundTruth;
-import de.fhws.indoor.libsmartphonesensors.sensors.HeadingChange;
-import de.fhws.indoor.libsmartphonesensors.sensors.PedestrianActivity;
-import de.fhws.indoor.libsmartphonesensors.sensors.PhoneSensors;
-import de.fhws.indoor.libsmartphonesensors.sensors.WiFi;
+import de.fhws.indoor.libsmartphonesensors.PedestrianActivity;
 import de.fhws.indoor.libsmartphonesensors.sensors.WiFiRTTScan;
-import de.fhws.indoor.libsmartphonesensors.sensors.iBeacon;
-import de.fhws.indoor.libsmartphonesensors.sensors.SensorType;
+import de.fhws.indoor.libsmartphonesensors.SensorType;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -71,10 +59,8 @@ public class MainActivity extends AppCompatActivity {
     MediaPlayer mpFailure;
 
     // sensors
-    DecawaveUWB.Config sensorUWBConfig = null;
-    DecawaveUWB sensorUWB = null;
+    SensorManager sensorManager = new SensorManager();
 
-    private final ArrayList<ASensor> sensors = new ArrayList<>();
     //private final Logger logger = new Logger(this);
     //private final LoggerRAM logger = new LoggerRAM(this);
     private final Logger logger = new OrderedLogger(this);
@@ -120,6 +106,17 @@ public class MainActivity extends AppCompatActivity {
         mpGround = MediaPlayer.create(this, R.raw.go);
         mpFailure = MediaPlayer.create(this, R.raw.error);
 
+        //configure sensorManager
+        sensorManager.addSensorListener((timestamp, id, csv) -> {
+            logger.addCSV(id, timestamp, csv);
+            // update UI for WIFI/BEACON/GPS
+            if(id == SensorType.WIFI) { runOnUiThread(() -> loadCounterWifi++); }
+            if(id == SensorType.WIFIRTT) { runOnUiThread(() -> loadCounterWifiRTT++); }
+            if(id == SensorType.IBEACON) { runOnUiThread(() -> loadCounterBeacon++); }
+            if(id == SensorType.GPS) { runOnUiThread(() -> loadCounterGPS++); }
+            if(id == SensorType.DECAWAVE_UWB) { runOnUiThread(() -> loadCounterUWB++); }
+        });
+
         //init Path spinner
         final Spinner pathSpinner = (Spinner) findViewById(R.id.pathspinner);
         List<String> pathList = new ArrayList<String>();
@@ -152,33 +149,25 @@ public class MainActivity extends AppCompatActivity {
 
         prgCacheFillStatus = (ProgressBar) findViewById(R.id.prgCacheFillStatus);
 
-        // log GroundTruth ButtonClicks using sensor number 99
-        final GroundTruth grndTruth = new GroundTruth(this);
-        sensors.add(grndTruth);
-        grndTruth.setListener(new ASensor.SensorListener() {
-            @Override public void onData(final long timestamp, final String csv) { return; }
-            @Override public void onData(SensorType id, final long timestamp, final String csv) {add(id, csv, timestamp); }
-        });
-
-
         btnStart.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
 
                 if(!isInitialized) {
-                    if(!runPreStartChecks()) { return; }
+                    //if(!runPreStartChecks()) { return; }
                     start();
                     isInitialized = true;
                     playSound(mpStart);
 
+                    final GroundTruth groundTruth = sensorManager.getSensor(GroundTruth.class);
                     //Write path id and ground truth point num
-                    grndTruth.writeInitData(Integer.parseInt(pathSpinner.getSelectedItem().toString().replaceAll("[\\D]", "")),
+                    groundTruth.writeInitData(Integer.parseInt(pathSpinner.getSelectedItem().toString().replaceAll("[\\D]", "")),
                             Integer.parseInt(groundSpinner.getSelectedItem().toString().replaceAll("[\\D]", "")));
 
                     //Write the first groundTruthPoint
-                    grndTruth.writeGroundTruth(groundTruthCounter);
+                    groundTruth.writeGroundTruth(groundTruthCounter);
 
                     //Write first activity
-                    add(SensorType.PEDESTRIAN_ACTIVITY, PedestrianActivity.STANDING.toString() + ";" + PedestrianActivity.STANDING.ordinal(), Logger.BEGINNING_TS);
+                    logger.addCSV(SensorType.PEDESTRIAN_ACTIVITY, Logger.BEGINNING_TS, PedestrianActivity.STANDING.toString() + ";" + PedestrianActivity.STANDING.ordinal());
 
                     //Disable the spinners
                     groundSpinner.setEnabled(false);
@@ -211,9 +200,10 @@ public class MainActivity extends AppCompatActivity {
 
         btnStop.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
-                if(isInitialized){
+                if(isInitialized) {
+                    final GroundTruth groundTruth = sensorManager.getSensor(GroundTruth.class);
                     //write the last groundTruthPoint
-                    grndTruth.writeGroundTruth(++groundTruthCounter);
+                    groundTruth.writeGroundTruth(++groundTruthCounter);
                     groundTruthCounter = 0;
 
                     btnGround.setText("Ground Truth");
@@ -246,7 +236,8 @@ public class MainActivity extends AppCompatActivity {
                     );
                     playSound(mpGround);
 
-                    grndTruth.writeGroundTruth(groundTruthCounter);
+                    final GroundTruth groundTruth = sensorManager.getSensor(GroundTruth.class);
+                    groundTruth.writeGroundTruth(groundTruthCounter);
                 }
                 else{
                     playSound(mpFailure);
@@ -274,7 +265,7 @@ public class MainActivity extends AppCompatActivity {
         currentPedestrianActivity = newActivity;
         activityButtons.get(newActivity).setActivity(true);
         if(logChange) {
-            add(SensorType.PEDESTRIAN_ACTIVITY, newActivity.toString() + ";" + newActivity.ordinal());
+            logger.addCSV(SensorType.PEDESTRIAN_ACTIVITY, SystemClock.elapsedRealtimeNanos(), newActivity.toString() + ";" + newActivity.ordinal());
         }
     }
 
@@ -282,7 +273,13 @@ public class MainActivity extends AppCompatActivity {
         logger.start(new Logger.FileMetadata(metaPerson, metaComment));
         final TextView txt = (TextView) findViewById(R.id.txtFile);
         txt.setText(logger.getName());
-        for (final ASensor s : sensors) {s.onResume(this);}
+
+        try {
+            sensorManager.start(this);
+        } catch (Exception e) {
+            e.printStackTrace();
+            //TODO: ui feedback?
+        }
         statisticsTimer = new Timer();
         statisticsTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
@@ -294,7 +291,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void stop() {
         statisticsTimer.cancel();
-        for (final ASensor s : sensors) {s.onPause(this);}
+        try {
+            sensorManager.stop(this);
+        } catch (Exception e) {
+            e.printStackTrace();
+            //TODO: ui feedback?
+        }
         logger.stop();
         updateDiagnostics(SystemClock.elapsedRealtimeNanos());
         ((TextView) findViewById(R.id.txtWifi)).setText("-");
@@ -314,19 +316,6 @@ public class MainActivity extends AppCompatActivity {
         loadCounterBeacon = 0;
         loadCounterGPS = 0;
         loadCounterUWB = 0;
-    }
-    private void add(final SensorType id, final String csv) {
-        add(id, csv, SystemClock.elapsedRealtimeNanos());
-    }
-    private void add(final SensorType id, final String csv, final long timestamp) {
-        logger.addCSV(id, timestamp, csv);
-
-        // update UI for WIFI/BEACON/GPS
-        if(id == SensorType.WIFI) { runOnUiThread(() -> loadCounterWifi++); }
-        if(id == SensorType.WIFIRTT) { runOnUiThread(() -> loadCounterWifiRTT++); }
-        if(id == SensorType.IBEACON) { runOnUiThread(() -> loadCounterBeacon++); }
-        if(id == SensorType.GPS) { runOnUiThread(() -> loadCounterGPS++); }
-        if(id == SensorType.DECAWAVE_UWB) { runOnUiThread(() -> loadCounterUWB++); }
     }
     private String makeStatusString(long evtCnt, String evtText) {
         if(evtCnt == 0) { return "-"; }
@@ -353,6 +342,7 @@ public class MainActivity extends AppCompatActivity {
 
                 txtGPS.setText(makeStatusString(loadCounterGPS, "gps"));
                 final TextView txtUWB = (TextView) findViewById(R.id.txtUWB);
+                DecawaveUWB sensorUWB = sensorManager.getSensor(DecawaveUWB.class);
                 if(sensorUWB != null) {
                     if(sensorUWB.isConnectedToTag()) {
                         txtUWB.setText(makeStatusString(loadCounterUWB, "uwb"));
@@ -493,153 +483,29 @@ public class MainActivity extends AppCompatActivity {
     }
 
     protected void setupSensors() {
-        //cleanup first
-        sensors.clear();
-
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         long wifiScanIntervalMSec = Long.parseLong(preferences.getString("prefWifiScanIntervalMSec", Long.toString(DEFAULT_WIFI_SCAN_INTERVAL)));
         final WifiScanProvider wifiScanProvider = new WifiScanProvider(this, wifiScanIntervalMSec);
         Set<String> activeSensors = preferences.getStringSet("prefActiveSensors", new HashSet<String>());
 
-        if(activeSensors.contains("PHONE")) {
-            // heartbeat permission
-//            if(ActivityCompat.shouldShowRequestPermissionRationale(this,
-//                    Manifest.permission.BODY_SENSORS)) {
-//            } else {
-//                ActivityCompat.requestPermissions(this,
-//                        new String[]{Manifest.permission.BODY_SENSORS},
-//                        MY_PERMISSIONS_REQUEST_READ_HEART);
-//            }
+        SensorManager.Config config = new SensorManager.Config();
+        config.hasPhone = activeSensors.contains("PHONE");
+        config.hasGPS = activeSensors.contains("GPS");
+        config.hasWifi = activeSensors.contains("WIFI");
+        config.hasWifiRTT = activeSensors.contains("WIFIRTTSCAN");
+        config.hasBluetooth = activeSensors.contains("BLUETOOTH");
+        config.hasDecawaveUWB = activeSensors.contains("DECAWAVE_UWB");
+        config.hasStepDetector = activeSensors.contains("STEP_DETECTOR");
+        config.hasHeadingChange = activeSensors.contains("HEADING_CHANGE");
 
-            //all Phone-Sensors (Accel, Gyro, Magnet, ...)
-            final DataFolder folder = new DataFolder(this, "sensorOutFiles");
-            final File file = new File(folder.getFolder(), "vendors.txt");
-            final PhoneSensors phoneSensors = new PhoneSensors(this);
-            phoneSensors.dumpVendors(file);
-            sensors.add(phoneSensors);
-            phoneSensors.setListener(new ASensor.SensorListener(){
-                @Override public void onData(final long timestamp, final String csv) { return; }
-                @Override public void onData(final SensorType id, final long timestamp, final String csv) { add(id, csv, timestamp); }
-            });
-        }
-        if(activeSensors.contains("HEADING_CHANGE")) {
-            Log.i("Sensors", "Using HeadingChange estimator");
-            final HeadingChange headingChange = new HeadingChange(this);
-            sensors.add(headingChange);
-            headingChange.setListener(new ASensor.SensorListener(){
-                @Override public void onData(final long timestamp, final String csv) { add(SensorType.HEADING_CHANGE, csv, timestamp); }
-                @Override public void onData(final SensorType id, final long timestamp, final String csv) { return; }
-            });
-        }
-        if(activeSensors.contains("GPS")) {
-            Log.i("Sensors", "Using GPS");
-            //log gps using sensor number 16
-            final GpsNew gps = new GpsNew(this);
-            sensors.add(gps);
-            gps.setListener(new ASensor.SensorListener(){
-                @Override public void onData(final long timestamp, final String csv) { add(SensorType.GPS, csv, timestamp); }
-                @Override public void onData(final SensorType id, final long timestamp, final String csv) { return; }
-            });
-        }
-        if(activeSensors.contains("WIFI")) {
-            Log.i("Sensors", "Using Wifi");
-            // log wifi using sensor number 8
-            final WiFi wifi = new WiFi(wifiScanProvider);
-            sensors.add(wifi);
-            wifi.setListener(new ASensor.SensorListener() {
-                @Override public void onData(final long timestamp, final String csv) { add(SensorType.WIFI, csv, timestamp); }
-                @Override public void onData(final SensorType id, final long timestamp, final String csv) {return; }
-            });
-        }
-        if(activeSensors.contains("WIFIRTTSCAN")) {
-            if (WiFiRTTScan.isSupported(this)) {
-                if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.P)
-                    return;
-                Log.i("Sensors", "Using WiFiRTTScan");
-                final WiFiRTTScan wiFiRTTScan = new WiFiRTTScan(this, wifiScanProvider);
-                sensors.add(wiFiRTTScan);
-                // log wifi RTT using sensor number 17
-                wiFiRTTScan.setListener(new ASensor.SensorListener() {
-                    @Override public void onData(final long timestamp, final String csv) { add(SensorType.WIFIRTT, csv, timestamp); }
-                    @Override public void onData(final SensorType id, final long timestamp, final String csv) { add(SensorType.WIFIRTT, csv, timestamp); }
-                });
-            }
-        }
-        if(activeSensors.contains("BLUETOOTH")) {
-            Log.i("Sensors", "Using Bluetooth");
-            // bluetooth permission
-            if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, new String[]{ Manifest.permission.ACCESS_FINE_LOCATION }, MY_PERMISSIONS_REQUEST_READ_BT);
-            }
-            if(ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, new String[]{ Manifest.permission.BLUETOOTH_SCAN }, MY_PERMISSIONS_REQUEST_BT_SCAN);
-            }
+        config.decawaveUWBTagMacAddress = preferences.getString("prefDecawaveUWBTagMacAddress", "");
+        config.wifiScanIntervalSec = Long.parseLong(preferences.getString("prefWifiScanIntervalMSec", Long.toString(DEFAULT_WIFI_SCAN_INTERVAL)));
 
-            LocationManager lm = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
-            boolean gps_enabled = false;
-            boolean network_enabled = false;
-            try {
-                gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
-            } catch(Exception ex) {}
-            try {
-                network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-            } catch(Exception ex) {}
-            if(!gps_enabled && !network_enabled) {
-                // notify user
-                new AlertDialog.Builder(this)
-                        .setMessage(R.string.gps_not_enabled)
-                        .setCancelable(false)
-                        .setPositiveButton(R.string.open_location_settings, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface paramDialogInterface, int paramInt) {
-                                startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
-                            }
-                        })
-                        .show();
-            }
-
-            // log iBeacons using sensor number 9
-            final ASensor beacon;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                beacon = new iBeacon(this);
-            } else {
-                beacon = null;
-                //beacon = new iBeaconOld(this);
-            }
-
-            if (beacon != null) {
-                sensors.add(beacon);
-                beacon.setListener(new ASensor.SensorListener() {
-                    @Override public void onData(final long timestamp, final String csv) { add(SensorType.IBEACON, csv, timestamp); }
-                    @Override public void onData(final SensorType id, final long timestamp, final String csv) {return; }
-                });
-            }
-
-            final ASensor eddystone;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                eddystone = new EddystoneUIDBeacon(this);
-                sensors.add(eddystone);
-                eddystone.setListener(new ASensor.SensorListener() {
-                    @Override public void onData(long timestamp, String csv) { add(SensorType.EDDYSTONE_UID, csv, timestamp); }
-                    @Override public void onData(SensorType id, long timestamp, String csv) { return; }
-                });
-            }
-        }
-
-        if (activeSensors.contains("DECAWAVE_UWB")) {
-            if(ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, new String[]{ Manifest.permission.BLUETOOTH_CONNECT }, MY_PERMISSIONS_REQUEST_BT_CONNECT);
-            }
-
-            Log.i("Sensors", "Using Decwave UWB");
-            sensorUWBConfig = new DecawaveUWB.Config();
-            sensorUWBConfig.tagMacAddress = preferences.getString("prefDecawaveUWBTagMacAddress", "");
-            sensorUWB = new DecawaveUWB(this, sensorUWBConfig);
-            sensors.add(sensorUWB);
-            sensorUWB.setListener(new ASensor.SensorListener() {
-                @Override public void onData(final long timestamp, final String csv) { add(SensorType.DECAWAVE_UWB, csv, timestamp); }
-                @Override public void onData(final SensorType id, final long timestamp, final String csv) { add(id, csv, timestamp); }
-            });
+        try {
+            sensorManager.configure(this, config);
+        } catch (Exception e) {
+            e.printStackTrace();
+            //TODO: ui feedback?
         }
     }
 
