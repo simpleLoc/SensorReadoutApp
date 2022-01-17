@@ -1,5 +1,6 @@
 package de.fhws.indoor.sensorreadout.loggers;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.SystemClock;
 
@@ -20,6 +21,7 @@ import de.fhws.indoor.libsmartphonesensors.SensorType;
 public abstract class Logger {
 
     public static final long BEGINNING_TS = -1;
+    public static final String FILE_PROVIDER_AUTHORITY = "de.fhws.indoor.sensorreadout.fileprovider";
 
     // work data
     private StringBuilder stringBuilder = new StringBuilder();
@@ -47,12 +49,12 @@ public abstract class Logger {
         // commit metadata
         addCSV(SensorType.FILE_METADATA, BEGINNING_TS, metadata.toCsv());
     }
-    public abstract void onStart();
+    protected abstract void onStart();
 
     public final void stop() {
         onStop();
     }
-    public abstract void onStop();
+    protected abstract void onStop();
 
     protected abstract void log(LogEntry logEntry);
 
@@ -64,6 +66,7 @@ public abstract class Logger {
     public abstract long getEntriesCached();
     public abstract float getCacheLevel();
     public abstract String getName();
+    public abstract void shareLast(Activity activity);
 
     /** add a new CSV entry for the given sensor number to the internal buffer */
     public final void addCSV(final SensorType sensorNr, final long timestamp, final String csv) {

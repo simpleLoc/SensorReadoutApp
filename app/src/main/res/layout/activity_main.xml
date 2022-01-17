@@ -83,28 +83,107 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
         android:layout_below="@+id/layout"
-        android:layout_marginEnd="10dip"
-        android:layout_marginStart="20dip"
+        android:layout_marginStart="5dip"
         android:layout_marginTop="10dip"
-        android:layout_weight="0.25"
+        android:layout_marginEnd="5dip"
         android:orientation="horizontal"
         android:weightSum="1">
+
         <TextView
             android:id="@+id/txtFile"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="0.9"
+            android:layout_weight="1"
+            android:text="-"
+            android:textColor="#ffffff" />
+
+        <TextView
+            android:layout_width="12pt"
+            android:layout_height="match_parent"
+            android:text="@string/app_version"
+            android:textAlignment="center"
+            android:textAllCaps="false"
+            android:textColor="#ffffff"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dip"
+        android:layout_marginEnd="5dip"
+        android:columnCount="7"
+        android:rowCount="2">
+
+        <TextView
+            android:id="@+id/lblCntWifi"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
+            android:text="Wifi"
+            android:textColor="#ffffff" />
+
+        <TextView
+            android:id="@+id/lblCntWifiRTT"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
+            android:text="FTM"
+            android:textColor="#ffffff" />
+
+        <TextView
+            android:id="@+id/lblCntBeacon"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
+            android:text="BLE"
+            android:textColor="#ffffff" />
+
+        <TextView
+            android:id="@+id/lblCntUWB"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
+            android:text="UWB"
+            android:textColor="#ffffff" />
+
+        <TextView
+            android:id="@+id/lblCntGPS"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
+            android:text="GPS"
+            android:textColor="#ffffff" />
+
+        <TextView
+            android:id="@+id/txtBuffer"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_rowSpan="2"
+            android:layout_gravity="fill_horizontal|fill_vertical"
+            android:gravity="right"
+            android:lines="2"
+            android:maxLines="2"
+            android:paddingLeft="3dip"
             android:text="-"
             android:textColor="#ffffff" />
 
         <ProgressBar
             android:id="@+id/prgCacheFillStatus"
-            style="@android:style/Widget.ProgressBar.Horizontal"
-            android:layout_width="0dp"
+            style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Horizontal"
+            android:layout_width="25dip"
             android:layout_height="match_parent"
-            android:layout_weight="0.1"
+            android:layout_rowSpan="2"
+            android:layout_gravity="fill_vertical"
+            android:layout_marginLeft="-5dip"
+            android:layout_marginRight="-5dip"
             android:clickable="false"
             android:indeterminate="false"
             android:indeterminateOnly="false"
@@ -113,81 +192,69 @@
             android:rotation="-90" />
 
         <TextView
-            android:layout_width="12pt"
-            android:layout_height="match_parent"
-            android:rotation="90"
-            android:text="@string/app_version"
-            android:textAlignment="center"
-            android:textAllCaps="false"
+            android:id="@+id/txtEvtCntWifi"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
+            android:text="-"
             android:textColor="#ffffff"
-            android:textSize="10sp" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/layoutMain"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_below="@+id/txtFile"
-        android:layout_marginEnd="10dip"
-        android:layout_marginStart="20dip"
-        android:layout_weight="0.25"
-        android:orientation="horizontal">
+            android:textSize="10dp" />
 
         <TextView
-            android:id="@+id/txtWifi"
-            android:layout_width="30dp"
-            android:layout_height="match_parent"
+            android:id="@+id/txtEvtCntWifiRTT"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
             android:text="-"
-            android:textColor="#ffffff" />
-        <TextView
-            android:id="@+id/txtWifiRTT"
-            android:layout_width="30dp"
-            android:layout_height="match_parent"
-            android:text="-"
-            android:textColor="#ffffff" />
+            android:textColor="#ffffff"
+            android:textSize="10dp" />
 
         <TextView
-            android:id="@+id/txtBeacon"
-            android:layout_width="30dp"
-            android:layout_height="match_parent"
+            android:id="@+id/txtEvtCntBeacon"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
             android:text="-"
-            android:textColor="#ffffff" />
+            android:textColor="#ffffff"
+            android:textSize="10dp" />
 
         <TextView
-            android:id="@+id/txtUWB"
-            android:layout_width="32dp"
-            android:layout_height="match_parent"
+            android:id="@+id/txtEvtCntUWB"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
             android:text="-"
-            android:textColor="#ffffff" />
+            android:textColor="#ffffff"
+            android:textSize="10dp" />
 
         <TextView
-            android:id="@+id/txtGPS"
-            android:layout_width="30dp"
-            android:layout_height="match_parent"
+            android:id="@+id/txtEvtCntGPS"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal|left"
+            android:background="@drawable/border"
+            android:paddingHorizontal="3dp"
             android:text="-"
-            android:textColor="#ffffff" />
+            android:textColor="#ffffff"
+            android:textSize="10dp" />
 
-        <TextView
-            android:id="@+id/txtBuffer"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:text="-"
-            android:textColor="#ffffff" />
-    </LinearLayout>
+    </GridLayout>
 
 
     <TableLayout
         android:id="@+id/pedestrianActivityButtonContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="2"/>
+        android:layout_weight="2.5" />
 
 
     <LinearLayout
         android:id="@+id/layoutGround"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="10dip"
         android:layout_weight="1"
         android:orientation="horizontal">
 
@@ -195,15 +262,33 @@
             android:id="@+id/btnGround"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_weight="1.5"
             android:background="#64bbe5"
             android:text="Ground Truth" />
 
-        <Button
-            android:id="@+id/btnSettings"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:background="#bbb"
-            android:text="Settings" />
+            android:layout_weight="0.1"
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/btnShareLast"
+                android:enabled="false"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:background="#bbb"
+                android:text="Share Last" />
+
+            <Button
+                android:id="@+id/btnSettings"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:background="#bbb"
+                android:text="Settings" />
+        </LinearLayout>
+
     </LinearLayout>
 </LinearLayout>

@@ -1,7 +1,14 @@
 package de.fhws.indoor.sensorreadout.loggers;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.net.Uri;
 import android.util.Log;
+
+import androidx.core.content.FileProvider;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -37,7 +44,7 @@ public final class OrderedLogger extends Logger {
     }
 
     @Override
-    public final void onStart() {
+    protected final void onStart() {
         reorderBuffer = new ReorderBuffer(CACHED_LINES, new ReorderBufferListener() {
             @Override
             public void onCommit(List<LogEntry> commitSlice) {
@@ -66,7 +73,7 @@ public final class OrderedLogger extends Logger {
     }
 
     @Override
-    public void onStop() {
+    protected void onStop() {
         reorderBuffer.flushAndStop();
         try {
             fos.close();
@@ -101,6 +108,20 @@ public final class OrderedLogger extends Logger {
         return "OrderedLogger";
     }
 
+    @Override
+    public void shareLast(Activity activity) {
+        Uri path = FileProvider.getUriForFile(activity, FILE_PROVIDER_AUTHORITY, file);
+        Intent i = new Intent(Intent.ACTION_SEND);
+        i.putExtra(Intent.EXTRA_TEXT, "Share Recording");
+        i.putExtra(Intent.EXTRA_STREAM, path);
+        i.setType("text/csv");
+        List<ResolveInfo> resInfoList = activity.getPackageManager().queryIntentActivities(i, PackageManager.MATCH_DEFAULT_ONLY);
+        for (ResolveInfo resolveInfo : resInfoList) {
+            String packageName = resolveInfo.activityInfo.packageName;
+            activity.grantUriPermission(packageName, path, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        }
+        activity.startActivity(Intent.createChooser(i, "Share Recording"));
+    }
 
     private interface ReorderBufferListener {
         void onCommit(final List<LogEntry> commitSlice);

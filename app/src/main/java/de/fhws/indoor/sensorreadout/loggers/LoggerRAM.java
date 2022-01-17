@@ -1,5 +1,6 @@
 package de.fhws.indoor.sensorreadout.loggers;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
@@ -35,7 +36,7 @@ public final class LoggerRAM extends Logger {
     }
 
     @Override
-    public void onStart() {
+    protected void onStart() {
         buffer.clear();
         // open the output-file immeditaly (to get permission errors)
         // but do NOT yet write anything to the file
@@ -51,7 +52,7 @@ public final class LoggerRAM extends Logger {
     }
 
     @Override
-    public void onStop() {
+    protected void onStop() {
         synchronized (buffer) {
             // sort by TS (ensure strict ordering)
             Collections.sort(buffer);
@@ -95,5 +96,10 @@ public final class LoggerRAM extends Logger {
     @Override
     public String getName() {
         return null;
+    }
+
+    @Override
+    public void shareLast(Activity activity) {
+        //TODO: implement
     }
 }

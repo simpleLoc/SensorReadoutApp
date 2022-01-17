@@ -68,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btnMetadata;
     private Button btnStop;
     private Button btnGround;
+    private Button btnShareLast;
     private Button btnSettings;
     private ProgressBar prgCacheFillStatus;
     private TableLayout activityButtonContainer;
@@ -144,6 +145,7 @@ public class MainActivity extends AppCompatActivity {
         btnMetadata = (Button) findViewById(R.id.btnMetadata);
         btnStop = (Button) findViewById(R.id.btnStop);
         btnGround = (Button) findViewById(R.id.btnGround);
+        btnShareLast = (Button) findViewById(R.id.btnShareLast);
         btnSettings = (Button) findViewById(R.id.btnSettings);
         activityButtonContainer = (TableLayout) findViewById(R.id.pedestrianActivityButtonContainer);
 
@@ -172,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
                     //Disable the spinners
                     groundSpinner.setEnabled(false);
                     pathSpinner.setEnabled(false);
+                    btnShareLast.setEnabled(false);
                 } else {
                     playSound(mpFailure);
                 }
@@ -191,8 +194,7 @@ public class MainActivity extends AppCompatActivity {
                         @Override public void onClose() {}
                     });
                     metadataDialog.show(getSupportFragmentManager(), "metadata");
-                }
-                else{
+                } else {
                     playSound(mpFailure);
                 }
             }
@@ -215,6 +217,7 @@ public class MainActivity extends AppCompatActivity {
                     //Enable the spinners
                     groundSpinner.setEnabled(true);
                     pathSpinner.setEnabled(true);
+                    btnShareLast.setEnabled(true);
 
                     //reset activity buttons
                     setActivityBtn(PedestrianActivity.STANDING, false);
@@ -243,6 +246,10 @@ public class MainActivity extends AppCompatActivity {
                     playSound(mpFailure);
                 }
             }
+        });
+
+        btnShareLast.setOnClickListener(v -> {
+            logger.shareLast(this);
         });
 
         btnSettings.setOnClickListener(new View.OnClickListener() {
@@ -299,9 +306,11 @@ public class MainActivity extends AppCompatActivity {
         }
         logger.stop();
         updateDiagnostics(SystemClock.elapsedRealtimeNanos());
-        ((TextView) findViewById(R.id.txtWifi)).setText("-");
-        ((TextView) findViewById(R.id.txtBeacon)).setText("-");
-        ((TextView) findViewById(R.id.txtGPS)).setText("-");
+        ((TextView) findViewById(R.id.txtEvtCntWifi)).setText("-");
+        ((TextView) findViewById(R.id.txtEvtCntWifiRTT)).setText("-");
+        ((TextView) findViewById(R.id.txtEvtCntBeacon)).setText("-");
+        ((TextView) findViewById(R.id.txtEvtCntUWB)).setText("-");
+        ((TextView) findViewById(R.id.txtEvtCntGPS)).setText("-");
     }
 
     /** new sensor data */
@@ -317,9 +326,8 @@ public class MainActivity extends AppCompatActivity {
         loadCounterGPS = 0;
         loadCounterUWB = 0;
     }
-    private String makeStatusString(long evtCnt, String evtText) {
-        if(evtCnt == 0) { return "-"; }
-        return (evtCnt % 2 == 0) ? evtText.toLowerCase() : evtText.toUpperCase();
+    private String makeStatusString(long evtCnt) {
+        return (evtCnt == 0) ? "-" : Long.toString(evtCnt);
     }
 
     private void updateDiagnostics(final long timestamp) {
@@ -329,23 +337,23 @@ public class MainActivity extends AppCompatActivity {
                 final TextView txt = (TextView) findViewById(R.id.txtBuffer);
                 final float elapsedMinutes = (timestamp - logger.getStartTS()) / 1000.0f / 1000.0f / 1000.0f / 60.0f;
                 final int kBPerMin = (int) (logger.getSizeTotal() / 1024.0f / elapsedMinutes);
-                txt.setText((logger.getSizeTotal() / 1024) + "kB, " + logger.getEventCnt() + "ev , " + kBPerMin + "kB/m");
+                txt.setText((logger.getSizeTotal() / 1024) + "kB, " + logger.getEventCnt() + "ev\n" + kBPerMin + "kB/m");
                 prgCacheFillStatus.setProgress((int)(logger.getCacheLevel() * 1000));
 
-                final TextView txtWifi = (TextView) findViewById(R.id.txtWifi);
-                txtWifi.setText(makeStatusString(loadCounterWifi, "wi"));
-                final TextView txtWifiRTT = (TextView) findViewById(R.id.txtWifiRTT);
-                txtWifiRTT.setText(makeStatusString(loadCounterWifiRTT, "rtt"));
-                final TextView txtBeacon = (TextView) findViewById(R.id.txtBeacon);
-                txtBeacon.setText(makeStatusString(loadCounterBeacon, "ib"));
-                final TextView txtGPS = (TextView) findViewById(R.id.txtGPS);
+                final TextView txtWifi = (TextView) findViewById(R.id.txtEvtCntWifi);
+                txtWifi.setText(makeStatusString(loadCounterWifi));
+                final TextView txtWifiRTT = (TextView) findViewById(R.id.txtEvtCntWifiRTT);
+                txtWifiRTT.setText(makeStatusString(loadCounterWifiRTT));
+                final TextView txtBeacon = (TextView) findViewById(R.id.txtEvtCntBeacon);
+                txtBeacon.setText(makeStatusString(loadCounterBeacon));
+                final TextView txtGPS = (TextView) findViewById(R.id.txtEvtCntGPS);
 
-                txtGPS.setText(makeStatusString(loadCounterGPS, "gps"));
-                final TextView txtUWB = (TextView) findViewById(R.id.txtUWB);
+                txtGPS.setText(makeStatusString(loadCounterGPS));
+                final TextView txtUWB = (TextView) findViewById(R.id.txtEvtCntUWB);
                 DecawaveUWB sensorUWB = sensorManager.getSensor(DecawaveUWB.class);
                 if(sensorUWB != null) {
                     if(sensorUWB.isConnectedToTag()) {
-                        txtUWB.setText(makeStatusString(loadCounterUWB, "uwb"));
+                        txtUWB.setText(makeStatusString(loadCounterUWB));
                     } else {
                         txtUWB.setText(sensorUWB.isCurrentlyConnecting() ? "⌛" : "✖");
                     }

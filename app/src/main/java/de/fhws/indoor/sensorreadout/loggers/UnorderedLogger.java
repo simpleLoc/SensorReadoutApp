@@ -1,5 +1,6 @@
 package de.fhws.indoor.sensorreadout.loggers;
 
+import android.app.Activity;
 import android.content.Context;
 import android.util.Log;
 
@@ -37,7 +38,7 @@ public final class UnorderedLogger extends Logger {
     }
 
     @Override
-    public void onStart() {
+    protected void onStart() {
         writeBackWorker = new WriteBackWorker();
 
         // open the output-file immediately (to get permission errors)
@@ -55,7 +56,7 @@ public final class UnorderedLogger extends Logger {
     }
 
     @Override
-    public void onStop() {
+    protected void onStop() {
         addingStopped = true;
         try {
             writeBackWorker.join();
@@ -92,8 +93,10 @@ public final class UnorderedLogger extends Logger {
         return "OrderedLogger";
     }
 
-
-
+    @Override
+    public void shareLast(Activity activity) {
+        //TODO: implement
+    }
 
     private class WriteBackWorker extends Thread {
 
