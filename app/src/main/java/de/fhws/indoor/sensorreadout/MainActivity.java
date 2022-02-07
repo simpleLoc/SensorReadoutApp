@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicLong;
 
 import de.fhws.indoor.libsmartphonesensors.SensorManager;
 import de.fhws.indoor.libsmartphonesensors.helpers.WifiScanProvider;
@@ -79,11 +80,6 @@ public class MainActivity extends AppCompatActivity {
     private int groundTruthCounter = 0;
     private boolean isInitialized = false;
 
-    final private int MY_PERMISSIONS_REQUEST_READ_BT = 123;
-    final private int MY_PERMISSIONS_REQUEST_BT_SCAN = 124;
-    final private int MY_PERMISSIONS_REQUEST_BT_CONNECT = 125;
-    final private int MY_PERMISSIONS_REQUEST_READ_HEART = 321;
-
     // file metadata
     private String metaPerson = "";
     private String metaComment = "";
@@ -111,11 +107,11 @@ public class MainActivity extends AppCompatActivity {
         sensorManager.addSensorListener((timestamp, id, csv) -> {
             logger.addCSV(id, timestamp, csv);
             // update UI for WIFI/BEACON/GPS
-            if(id == SensorType.WIFI) { runOnUiThread(() -> loadCounterWifi++); }
-            if(id == SensorType.WIFIRTT) { runOnUiThread(() -> loadCounterWifiRTT++); }
-            if(id == SensorType.IBEACON) { runOnUiThread(() -> loadCounterBeacon++); }
-            if(id == SensorType.GPS) { runOnUiThread(() -> loadCounterGPS++); }
-            if(id == SensorType.DECAWAVE_UWB) { runOnUiThread(() -> loadCounterUWB++); }
+            if(id == SensorType.WIFI) { runOnUiThread(() -> loadCounterWifi.incrementAndGet()); }
+            if(id == SensorType.WIFIRTT) { runOnUiThread(() -> loadCounterWifiRTT.incrementAndGet()); }
+            if(id == SensorType.IBEACON) { runOnUiThread(() -> loadCounterBeacon.incrementAndGet()); }
+            if(id == SensorType.GPS) { runOnUiThread(() -> loadCounterGPS.incrementAndGet()); }
+            if(id == SensorType.DECAWAVE_UWB) { runOnUiThread(() -> loadCounterUWB.incrementAndGet()); }
         });
 
         //init Path spinner
@@ -314,49 +310,46 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /** new sensor data */
-    private volatile int loadCounterWifi = 0;
-    private volatile int loadCounterWifiRTT = 0;
-    private volatile int loadCounterBeacon = 0;
-    private volatile int loadCounterGPS = 0;
-    private volatile int loadCounterUWB = 0;
+    private AtomicLong loadCounterWifi = new AtomicLong(0);
+    private AtomicLong loadCounterWifiRTT = new AtomicLong(0);
+    private AtomicLong loadCounterBeacon = new AtomicLong(0);
+    private AtomicLong loadCounterGPS = new AtomicLong(0);
+    private AtomicLong loadCounterUWB = new AtomicLong(0);
     private void resetStatistics() {
-        loadCounterWifi = 0;
-        loadCounterWifiRTT = 0;
-        loadCounterBeacon = 0;
-        loadCounterGPS = 0;
-        loadCounterUWB = 0;
+        loadCounterWifi.set(0);
+        loadCounterWifiRTT.set(0);
+        loadCounterBeacon.set(0);
+        loadCounterGPS.set(0);
+        loadCounterUWB.set(0);
     }
     private String makeStatusString(long evtCnt) {
         return (evtCnt == 0) ? "-" : Long.toString(evtCnt);
     }
 
     private void updateDiagnostics(final long timestamp) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                final TextView txt = (TextView) findViewById(R.id.txtBuffer);
-                final float elapsedMinutes = (timestamp - logger.getStartTS()) / 1000.0f / 1000.0f / 1000.0f / 60.0f;
-                final int kBPerMin = (int) (logger.getSizeTotal() / 1024.0f / elapsedMinutes);
-                txt.setText((logger.getSizeTotal() / 1024) + "kB, " + logger.getEventCnt() + "ev\n" + kBPerMin + "kB/m");
-                prgCacheFillStatus.setProgress((int)(logger.getCacheLevel() * 1000));
+        runOnUiThread(() -> {
+            final TextView txt = (TextView) findViewById(R.id.txtBuffer);
+            final float elapsedMinutes = (timestamp - logger.getStartTS()) / 1000.0f / 1000.0f / 1000.0f / 60.0f;
+            final int kBPerMin = (int) (logger.getSizeTotal() / 1024.0f / elapsedMinutes);
+            txt.setText((logger.getSizeTotal() / 1024) + "kB, " + logger.getEventCnt() + "ev\n" + kBPerMin + "kB/m");
+            prgCacheFillStatus.setProgress((int)(logger.getCacheLevel() * 1000));
 
-                final TextView txtWifi = (TextView) findViewById(R.id.txtEvtCntWifi);
-                txtWifi.setText(makeStatusString(loadCounterWifi));
-                final TextView txtWifiRTT = (TextView) findViewById(R.id.txtEvtCntWifiRTT);
-                txtWifiRTT.setText(makeStatusString(loadCounterWifiRTT));
-                final TextView txtBeacon = (TextView) findViewById(R.id.txtEvtCntBeacon);
-                txtBeacon.setText(makeStatusString(loadCounterBeacon));
-                final TextView txtGPS = (TextView) findViewById(R.id.txtEvtCntGPS);
+            final TextView txtWifi = (TextView) findViewById(R.id.txtEvtCntWifi);
+            txtWifi.setText(makeStatusString(loadCounterWifi.get()));
+            final TextView txtWifiRTT = (TextView) findViewById(R.id.txtEvtCntWifiRTT);
+            txtWifiRTT.setText(makeStatusString(loadCounterWifiRTT.get()));
+            final TextView txtBeacon = (TextView) findViewById(R.id.txtEvtCntBeacon);
+            txtBeacon.setText(makeStatusString(loadCounterBeacon.get()));
+            final TextView txtGPS = (TextView) findViewById(R.id.txtEvtCntGPS);
 
-                txtGPS.setText(makeStatusString(loadCounterGPS));
-                final TextView txtUWB = (TextView) findViewById(R.id.txtEvtCntUWB);
-                DecawaveUWB sensorUWB = sensorManager.getSensor(DecawaveUWB.class);
-                if(sensorUWB != null) {
-                    if(sensorUWB.isConnectedToTag()) {
-                        txtUWB.setText(makeStatusString(loadCounterUWB));
-                    } else {
-                        txtUWB.setText(sensorUWB.isCurrentlyConnecting() ? "⌛" : "✖");
-                    }
+            txtGPS.setText(makeStatusString(loadCounterGPS.get()));
+            final TextView txtUWB = (TextView) findViewById(R.id.txtEvtCntUWB);
+            DecawaveUWB sensorUWB = sensorManager.getSensor(DecawaveUWB.class);
+            if(sensorUWB != null) {
+                if(sensorUWB.isConnectedToTag()) {
+                    txtUWB.setText(makeStatusString(loadCounterUWB.get()));
+                } else {
+                    txtUWB.setText(sensorUWB.isCurrentlyConnecting() ? "⌛" : "✖");
                 }
             }
         });
@@ -492,8 +485,6 @@ public class MainActivity extends AppCompatActivity {
 
     protected void setupSensors() {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        long wifiScanIntervalMSec = Long.parseLong(preferences.getString("prefWifiScanIntervalMSec", Long.toString(DEFAULT_WIFI_SCAN_INTERVAL)));
-        final WifiScanProvider wifiScanProvider = new WifiScanProvider(this, wifiScanIntervalMSec);
         Set<String> activeSensors = preferences.getStringSet("prefActiveSensors", new HashSet<String>());
 
         SensorManager.Config config = new SensorManager.Config();

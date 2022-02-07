@@ -70,18 +70,20 @@ public abstract class Logger {
 
     /** add a new CSV entry for the given sensor number to the internal buffer */
     public final void addCSV(final SensorType sensorNr, final long timestamp, final String csv) {
-        final long relTS = (timestamp == Logger.BEGINNING_TS) ? 0 : (timestamp - startTs);
-        if(relTS >= 0) { // drop pre startTS logs (at the beginning, sensors sometimes deliver old values)
-            stringBuilder.append(relTS);	// relative timestamp (uses less space)
-            stringBuilder.append(';');
-            stringBuilder.append(sensorNr.id());
-            stringBuilder.append(';');
-            stringBuilder.append(csv);
-            stringBuilder.append('\n');
-            log(new LogEntry(relTS, stringBuilder.toString()));
-            statEntryCnt.incrementAndGet();
-            statSizeTotal.addAndGet(stringBuilder.length());
-            stringBuilder.setLength(0);
+        synchronized (stringBuilder) {
+            final long relTS = (timestamp == Logger.BEGINNING_TS) ? 0 : (timestamp - startTs);
+            if (relTS >= 0) { // drop pre startTS logs (at the beginning, sensors sometimes deliver old values)
+                stringBuilder.append(relTS);    // relative timestamp (uses less space)
+                stringBuilder.append(';');
+                stringBuilder.append(sensorNr.id());
+                stringBuilder.append(';');
+                stringBuilder.append(csv);
+                stringBuilder.append('\n');
+                log(new LogEntry(relTS, stringBuilder.toString()));
+                statEntryCnt.incrementAndGet();
+                statSizeTotal.addAndGet(stringBuilder.length());
+                stringBuilder.setLength(0);
+            }
         }
     }
 
