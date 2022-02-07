@@ -47,6 +47,7 @@ import de.fhws.indoor.libsmartphonesensors.sensors.GroundTruth;
 import de.fhws.indoor.libsmartphonesensors.PedestrianActivity;
 import de.fhws.indoor.libsmartphonesensors.sensors.WiFiRTTScan;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
+import de.fhws.indoor.sensorreadout.loggers.TimedOrderedLogger;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -64,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
 
     //private final Logger logger = new Logger(this);
     //private final LoggerRAM logger = new LoggerRAM(this);
-    private final Logger logger = new OrderedLogger(this);
+    private final Logger logger = new TimedOrderedLogger(this);
     private Button btnStart;
     private Button btnMetadata;
     private Button btnStop;

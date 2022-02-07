@@ -78,7 +78,7 @@ public final class OrderedLogger extends Logger {
         try {
             fos.close();
         } catch (final Exception e) {
-            throw new MyException("error while wriyting log-file", e);
+            throw new MyException("error while writing log-file", e);
         }
     }
 
