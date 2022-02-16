@@ -3,6 +3,7 @@ package de.fhws.indoor.sensorreadout.loggers;
 import android.app.Activity;
 import android.content.Context;
 import android.os.SystemClock;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -24,7 +25,6 @@ public abstract class Logger {
     public static final String FILE_PROVIDER_AUTHORITY = "de.fhws.indoor.sensorreadout.fileprovider";
 
     // work data
-    private StringBuilder stringBuilder = new StringBuilder();
     protected Context context;
     /** timestamp of logging start. all entries are relative to this one */
     protected long startTs = 0;
@@ -41,7 +41,6 @@ public abstract class Logger {
     public final void start(FileMetadata metadata) {
         statEntryCnt.set(0);
         statSizeTotal.set(0);
-        stringBuilder.setLength(0);
         // starting timestamp
         startTs = SystemClock.elapsedRealtimeNanos();
         onStart();
@@ -70,20 +69,12 @@ public abstract class Logger {
 
     /** add a new CSV entry for the given sensor number to the internal buffer */
     public final void addCSV(final SensorType sensorNr, final long timestamp, final String csv) {
-        synchronized (stringBuilder) {
-            final long relTS = (timestamp == Logger.BEGINNING_TS) ? 0 : (timestamp - startTs);
-            if (relTS >= 0) { // drop pre startTS logs (at the beginning, sensors sometimes deliver old values)
-                stringBuilder.append(relTS);    // relative timestamp (uses less space)
-                stringBuilder.append(';');
-                stringBuilder.append(sensorNr.id());
-                stringBuilder.append(';');
-                stringBuilder.append(csv);
-                stringBuilder.append('\n');
-                log(new LogEntry(relTS, stringBuilder.toString()));
-                statEntryCnt.incrementAndGet();
-                statSizeTotal.addAndGet(stringBuilder.length());
-                stringBuilder.setLength(0);
-            }
+        final long relTS = (timestamp == Logger.BEGINNING_TS) ? 0 : (timestamp - startTs);
+        if (relTS >= 0) { // drop pre startTS logs (at the beginning, sensors sometimes deliver old values)
+            String line = String.format("%d;%d;%s\n", relTS, sensorNr.id(), csv);
+            log(new LogEntry(relTS, line));
+            statEntryCnt.incrementAndGet();
+            statSizeTotal.addAndGet(line.length());
         }
     }
 
