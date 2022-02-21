@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
@@ -28,6 +29,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.view.ViewGroup.LayoutParams;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -53,6 +56,7 @@ import de.fhws.indoor.sensorreadout.loggers.TimedOrderedLogger;
 public class MainActivity extends AppCompatActivity {
 
     private static final long DEFAULT_WIFI_SCAN_INTERVAL = (Build.VERSION.SDK_INT == 28 ? 30 : 1);
+    private static final PedestrianActivity DEFAULT_ACTIVITY = PedestrianActivity.STANDING;
 
     // sounds
     MediaPlayer mpStart;
@@ -75,10 +79,11 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar prgCacheFillStatus;
     private TableLayout activityButtonContainer;
     private HashMap<PedestrianActivity, PedestrianActivityButton> activityButtons = new HashMap<>();
-    private PedestrianActivity currentPedestrianActivity = PedestrianActivity.STANDING;
+    private PedestrianActivity currentPedestrianActivity = DEFAULT_ACTIVITY;
     private Timer statisticsTimer = null;
 
     private int groundTruthCounter = 0;
+    private Instant lastUserInteractionTs;
     private boolean isInitialized = false;
 
     // file metadata
@@ -149,9 +154,11 @@ public class MainActivity extends AppCompatActivity {
         prgCacheFillStatus = (ProgressBar) findViewById(R.id.prgCacheFillStatus);
 
         btnStart.setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
             @Override public void onClick(View v) {
 
                 if(!isInitialized) {
+                    lastUserInteractionTs = Instant.now();
                     //if(!runPreStartChecks()) { return; }
                     start();
                     isInitialized = true;
@@ -166,7 +173,7 @@ public class MainActivity extends AppCompatActivity {
                     groundTruth.writeGroundTruth(groundTruthCounter);
 
                     //Write first activity
-                    logger.addCSV(SensorType.PEDESTRIAN_ACTIVITY, Logger.BEGINNING_TS, PedestrianActivity.STANDING.toString() + ";" + PedestrianActivity.STANDING.ordinal());
+                    logger.addCSV(SensorType.PEDESTRIAN_ACTIVITY, Logger.BEGINNING_TS, DEFAULT_ACTIVITY.toString() + ";" + DEFAULT_ACTIVITY.id());
 
                     //Disable the spinners
                     groundSpinner.setEnabled(false);
@@ -198,6 +205,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         btnStop.setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
             @Override public void onClick(View v) {
                 if(isInitialized) {
                     final GroundTruth groundTruth = sensorManager.getSensor(GroundTruth.class);
@@ -217,7 +225,7 @@ public class MainActivity extends AppCompatActivity {
                     btnShareLast.setEnabled(true);
 
                     //reset activity buttons
-                    setActivityBtn(PedestrianActivity.STANDING, false);
+                    setActivityBtn(DEFAULT_ACTIVITY, false);
                 }
                 else{
                     playSound(mpFailure);
@@ -226,9 +234,10 @@ public class MainActivity extends AppCompatActivity {
         });
 
         btnGround.setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
             @Override public void onClick(View v) {
                 if(isInitialized) {
-
+                    lastUserInteractionTs = Instant.now();
                     String numGroundTruthPoints = groundSpinner.getSelectedItem().toString().replaceAll("[\\D]", "");
 
                     btnGround.setText(Integer.toString(++groundTruthCounter) + " / "
@@ -262,14 +271,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void setActivityBtn(PedestrianActivity newActivity, boolean logChange){
+    private void setActivityBtn(PedestrianActivity newActivity, boolean logChange) {
         if(activityButtons.containsKey(currentPedestrianActivity)) {
             activityButtons.get(currentPedestrianActivity).setActivity(false);
         }
         currentPedestrianActivity = newActivity;
         activityButtons.get(newActivity).setActivity(true);
         if(logChange) {
-            logger.addCSV(SensorType.PEDESTRIAN_ACTIVITY, SystemClock.elapsedRealtimeNanos(), newActivity.toString() + ";" + newActivity.ordinal());
+            logger.addCSV(SensorType.PEDESTRIAN_ACTIVITY, SystemClock.elapsedRealtimeNanos(), newActivity.toString() + ";" + newActivity.id());
         }
     }
 
@@ -286,6 +295,7 @@ public class MainActivity extends AppCompatActivity {
         }
         statisticsTimer = new Timer();
         statisticsTimer.scheduleAtFixedRate(new TimerTask() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void run() {
                 updateDiagnostics(SystemClock.elapsedRealtimeNanos());
@@ -293,6 +303,7 @@ public class MainActivity extends AppCompatActivity {
         }, 250, 250);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private void stop() {
         statisticsTimer.cancel();
         try {
@@ -327,8 +338,21 @@ public class MainActivity extends AppCompatActivity {
         return (evtCnt == 0) ? "-" : Long.toString(evtCnt);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private void updateDiagnostics(final long timestamp) {
         runOnUiThread(() -> {
+            { // update UI timer
+                final TextView txtClock = findViewById(R.id.txtClock);
+                Instant now = Instant.now();
+                Duration duration = Duration.between(lastUserInteractionTs, now);
+                long minutes = duration.toMinutes();
+                duration = duration.minusMinutes(minutes);
+                long milliseconds = duration.toMillis();
+                long seconds = (milliseconds / 1000);
+                milliseconds -= (seconds * 1000);
+                txtClock.setText(String.format("%02d:%02d.%04d", minutes, seconds, milliseconds));
+            }
+
             final TextView txt = (TextView) findViewById(R.id.txtBuffer);
             final float elapsedMinutes = (timestamp - logger.getStartTS()) / 1000.0f / 1000.0f / 1000.0f / 60.0f;
             final int kBPerMin = (int) (logger.getSizeTotal() / 1024.0f / elapsedMinutes);
@@ -362,6 +386,7 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     protected void onStart() {
         super.onStart();
         if(!isInitialized) {
@@ -415,6 +440,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     protected void setupActivityButtons() {
         // cleanup before recreation
         for(int i = 0; i < activityButtonContainer.getChildCount(); ++i) {
@@ -467,21 +493,18 @@ public class MainActivity extends AppCompatActivity {
                 activityButtonContainer.addView(currentButtonRow, rowLayout);
             }
             currentButtonRow.addView(button, columnLayout);
-            button.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if(isInitialized) {
-                        setActivityBtn(button.getPedestrianActivity(), true);
-                    }
-                    else {
-                        playSound(mpFailure);
-                    }
+            button.setOnClickListener(v -> {
+                lastUserInteractionTs = Instant.now();
+                if(isInitialized) {
+                    setActivityBtn(button.getPedestrianActivity(), true);
+                } else {
+                    playSound(mpFailure);
                 }
             });
         }
 
         //set current activity
-        setActivityBtn(PedestrianActivity.STANDING, false);
+        setActivityBtn(DEFAULT_ACTIVITY, false);
     }
 
     protected void setupSensors() {
