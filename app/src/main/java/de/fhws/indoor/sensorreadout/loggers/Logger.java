@@ -8,6 +8,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import de.fhws.indoor.libsmartphonesensors.SensorType;
@@ -32,6 +33,7 @@ public abstract class Logger {
     //statistics
     private AtomicLong statEntryCnt = new AtomicLong(0);
     private AtomicLong statSizeTotal = new AtomicLong(0);
+    private AtomicBoolean isRunning = new AtomicBoolean(false);
 
     public Logger(Context context) {
         this.context = context;
@@ -43,6 +45,7 @@ public abstract class Logger {
         statSizeTotal.set(0);
         // starting timestamp
         startTs = SystemClock.elapsedRealtimeNanos();
+        isRunning.set(true);
         onStart();
 
         // commit metadata
@@ -51,6 +54,7 @@ public abstract class Logger {
     protected abstract void onStart();
 
     public final void stop() {
+        isRunning.set(false);
         onStop();
     }
     protected abstract void onStop();
@@ -69,6 +73,7 @@ public abstract class Logger {
 
     /** add a new CSV entry for the given sensor number to the internal buffer */
     public final void addCSV(final SensorType sensorNr, final long timestamp, final String csv) {
+        if(isRunning.get() == false) { return; }
         final long relTS = (timestamp == Logger.BEGINNING_TS) ? 0 : (timestamp - startTs);
         if (relTS >= 0) { // drop pre startTS logs (at the beginning, sensors sometimes deliver old values)
             String line = String.format("%d;%d;%s\n", relTS, sensorNr.id(), csv);

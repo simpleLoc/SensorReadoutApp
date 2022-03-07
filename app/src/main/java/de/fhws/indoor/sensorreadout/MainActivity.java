@@ -163,6 +163,7 @@ public class MainActivity extends AppCompatActivity {
                     start();
                     isInitialized = true;
                     playSound(mpStart);
+                    resetStatistics();
 
                     final GroundTruth groundTruth = sensorManager.getSensor(GroundTruth.class);
                     //Write path id and ground truth point num
