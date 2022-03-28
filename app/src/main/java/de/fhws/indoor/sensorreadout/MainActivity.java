@@ -42,9 +42,7 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicLong;
 
 import de.fhws.indoor.libsmartphonesensors.SensorManager;
-import de.fhws.indoor.libsmartphonesensors.helpers.WifiScanProvider;
 import de.fhws.indoor.sensorreadout.loggers.Logger;
-import de.fhws.indoor.sensorreadout.loggers.OrderedLogger;
 import de.fhws.indoor.libsmartphonesensors.sensors.DecawaveUWB;
 import de.fhws.indoor.libsmartphonesensors.sensors.GroundTruth;
 import de.fhws.indoor.libsmartphonesensors.PedestrianActivity;
@@ -523,7 +521,8 @@ public class MainActivity extends AppCompatActivity {
         config.hasHeadingChange = activeSensors.contains("HEADING_CHANGE");
 
         config.decawaveUWBTagMacAddress = preferences.getString("prefDecawaveUWBTagMacAddress", "");
-        config.wifiScanIntervalSec = Long.parseLong(preferences.getString("prefWifiScanIntervalMSec", Long.toString(DEFAULT_WIFI_SCAN_INTERVAL)));
+        config.wifiScanIntervalMSec = Long.parseLong(preferences.getString("prefWifiScanIntervalMSec", Long.toString(DEFAULT_WIFI_SCAN_INTERVAL)));
+        config.ftmRangingIntervalMSec = Long.parseLong(preferences.getString("prefFtmRangingIntervalMSec", Long.toString(DEFAULT_WIFI_SCAN_INTERVAL)));
 
         try {
             sensorManager.configure(this, config);

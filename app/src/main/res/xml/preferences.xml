@@ -22,6 +22,12 @@
         app:summary="Interval (ms) at which Wifi-Scans are attempted. 0 will attempt to start a new scan as soon as the previous is done."
         app:title="Wifi Scan Interval (ms)" />
     <EditTextPreference
+        app:key="prefFtmRangingIntervalMSec"
+        app:defaultValue="300"
+        app:singleLine="true"
+        app:summary="Interval (ms) with which new FTM ranging requests are scheduled."
+        app:title="FTM Ranging Interval (ms)" />
+    <EditTextPreference
         app:defaultValue="AA:BB:CC:DD:EE:FF"
         app:key="prefDecawaveUWBTagMacAddress"
         app:singleLine="true"
