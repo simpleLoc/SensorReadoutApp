@@ -17,9 +17,9 @@
         app:title="@string/prefActiveActions" />
     <EditTextPreference
         app:key="prefWifiScanIntervalMSec"
-        app:defaultValue="0"
+        app:defaultValue="30000"
         app:singleLine="true"
-        app:summary="Interval (ms) at which Wifi-Scans are attempted. 0 will attempt to start a new scan as soon as the previous is done."
+        app:summary="Interval (ms) at which Wifi-Scans are attempted. 0 will attempt to start a new scan as soon as the previous is done. !! WARNING: Do not use fast scanning in combination with FTM !!"
         app:title="Wifi Scan Interval (ms)" />
     <EditTextPreference
         app:key="prefFtmRangingIntervalMSec"
