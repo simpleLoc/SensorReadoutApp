@@ -2,12 +2,17 @@ package de.fhws.indoor.sensorreadout.loggers;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.Build;
 import android.os.SystemClock;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 
-import java.util.Date;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -101,19 +106,23 @@ public abstract class Logger {
     public static class FileMetadata {
         private String person;
         private String comment;
-        private Date date;
+        private Instant dateTime;
 
+        @RequiresApi(api = Build.VERSION_CODES.O)
         public FileMetadata(String person, String comment) {
-            this(person, comment, new Date());
+            this(person, comment, Instant.now());
         }
-        public FileMetadata(String person, String comment, Date date) {
+        public FileMetadata(String person, String comment, Instant dateTime) {
             this.person = person;
             this.comment = comment;
-            this.date = date;
+            this.dateTime = dateTime;
         }
 
+        @RequiresApi(api = Build.VERSION_CODES.O)
         protected String toCsv() {
-            return date.toString() + ";" + person + ";" + comment;
+            DateTimeFormatter dateTimeFormatter = new DateTimeFormatterBuilder().toFormatter();
+            OffsetDateTime utcDateTime = dateTime.atOffset(ZoneOffset.UTC);
+            return dateTimeFormatter.format(utcDateTime) + ";" + person + ";" + comment;
         }
     }
 
