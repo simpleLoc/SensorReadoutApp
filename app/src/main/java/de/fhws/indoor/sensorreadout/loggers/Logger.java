@@ -120,9 +120,8 @@ public abstract class Logger {
 
         @RequiresApi(api = Build.VERSION_CODES.O)
         protected String toCsv() {
-            DateTimeFormatter dateTimeFormatter = new DateTimeFormatterBuilder().toFormatter();
-            OffsetDateTime utcDateTime = dateTime.atOffset(ZoneOffset.UTC);
-            return dateTimeFormatter.format(utcDateTime) + ";" + person + ";" + comment;
+            String utcDateTime = dateTime.atOffset(ZoneOffset.UTC).toString();
+            return utcDateTime + ";" + person + ";" + comment;
         }
     }
 
