@@ -349,7 +349,7 @@ public class MainActivity extends AppCompatActivity {
                 long milliseconds = duration.toMillis();
                 long seconds = (milliseconds / 1000);
                 milliseconds -= (seconds * 1000);
-                txtClock.setText(String.format("%02d:%02d.%04d", minutes, seconds, milliseconds));
+                txtClock.setText(String.format("%02d:%02d.%03d", minutes, seconds, milliseconds));
             }
 
             final TextView txt = (TextView) findViewById(R.id.txtBuffer);
