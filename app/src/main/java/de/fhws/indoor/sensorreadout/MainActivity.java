@@ -11,7 +11,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
@@ -29,8 +28,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.view.ViewGroup.LayoutParams;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -39,6 +36,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import de.fhws.indoor.libsmartphonesensors.SensorManager;
@@ -81,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
     private Timer statisticsTimer = null;
 
     private int groundTruthCounter = 0;
-    private Instant lastUserInteractionTs;
+    private long lastUserInteractionTs;
     private boolean isInitialized = false;
 
     // file metadata
@@ -151,36 +149,35 @@ public class MainActivity extends AppCompatActivity {
 
         prgCacheFillStatus = (ProgressBar) findViewById(R.id.prgCacheFillStatus);
 
-        btnStart.setOnClickListener(new View.OnClickListener() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
-            @Override public void onClick(View v) {
+        btnStart.setOnClickListener(v -> {
+            if(!isInitialized) {
+                lastUserInteractionTs = System.currentTimeMillis();
+                //if(!runPreStartChecks()) { return; }
+                start();
+                isInitialized = true;
+                playSound(mpStart);
+                resetStatistics();
 
-                if(!isInitialized) {
-                    lastUserInteractionTs = Instant.now();
-                    //if(!runPreStartChecks()) { return; }
-                    start();
-                    isInitialized = true;
-                    playSound(mpStart);
-                    resetStatistics();
+                final GroundTruth groundTruth = sensorManager.getSensor(GroundTruth.class);
+                //Write path id and ground truth point num
+                groundTruth.writeInitData(
+                    Integer.parseInt(pathSpinner.getSelectedItem().toString().replaceAll("[\\D]", "")),
+                    Integer.parseInt(groundSpinner.getSelectedItem().toString().replaceAll("[\\D]", "")),
+                    Logger.BEGINNING_TS
+                );
 
-                    final GroundTruth groundTruth = sensorManager.getSensor(GroundTruth.class);
-                    //Write path id and ground truth point num
-                    groundTruth.writeInitData(Integer.parseInt(pathSpinner.getSelectedItem().toString().replaceAll("[\\D]", "")),
-                            Integer.parseInt(groundSpinner.getSelectedItem().toString().replaceAll("[\\D]", "")));
+                //Write the first groundTruthPoint
+                groundTruth.writeGroundTruth(groundTruthCounter, Logger.BEGINNING_TS);
 
-                    //Write the first groundTruthPoint
-                    groundTruth.writeGroundTruth(groundTruthCounter);
+                //Write first activity
+                logger.addCSV(SensorType.PEDESTRIAN_ACTIVITY, Logger.BEGINNING_TS, DEFAULT_ACTIVITY.toString() + ";" + DEFAULT_ACTIVITY.id());
 
-                    //Write first activity
-                    logger.addCSV(SensorType.PEDESTRIAN_ACTIVITY, Logger.BEGINNING_TS, DEFAULT_ACTIVITY.toString() + ";" + DEFAULT_ACTIVITY.id());
-
-                    //Disable the spinners
-                    groundSpinner.setEnabled(false);
-                    pathSpinner.setEnabled(false);
-                    btnShareLast.setEnabled(false);
-                } else {
-                    playSound(mpFailure);
-                }
+                //Disable the spinners
+                groundSpinner.setEnabled(false);
+                pathSpinner.setEnabled(false);
+                btnShareLast.setEnabled(false);
+            } else {
+                playSound(mpFailure);
             }
         });
 
@@ -203,53 +200,45 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        btnStop.setOnClickListener(new View.OnClickListener() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
-            @Override public void onClick(View v) {
-                if(isInitialized) {
-                    final GroundTruth groundTruth = sensorManager.getSensor(GroundTruth.class);
-                    //write the last groundTruthPoint
-                    groundTruth.writeGroundTruth(++groundTruthCounter);
-                    groundTruthCounter = 0;
+        btnStop.setOnClickListener(v -> {
+            if(isInitialized) {
+                final GroundTruth groundTruth = sensorManager.getSensor(GroundTruth.class);
+                //write the last groundTruthPoint
+                groundTruth.writeGroundTruth(++groundTruthCounter, SystemClock.elapsedRealtimeNanos());
+                groundTruthCounter = 0;
 
-                    btnGround.setText("Ground Truth");
-                    stop();
-                    resetStatistics();
-                    isInitialized = false;
-                    playSound(mpStop);
+                btnGround.setText("Ground Truth");
+                stop();
+                resetStatistics();
+                isInitialized = false;
+                playSound(mpStop);
 
-                    //Enable the spinners
-                    groundSpinner.setEnabled(true);
-                    pathSpinner.setEnabled(true);
-                    btnShareLast.setEnabled(true);
+                //Enable the spinners
+                groundSpinner.setEnabled(true);
+                pathSpinner.setEnabled(true);
+                btnShareLast.setEnabled(true);
 
-                    //reset activity buttons
-                    setActivityBtn(DEFAULT_ACTIVITY, false);
-                }
-                else{
-                    playSound(mpFailure);
-                }
+                //reset activity buttons
+                setActivityBtn(DEFAULT_ACTIVITY, false);
+            }
+            else{
+                playSound(mpFailure);
             }
         });
 
-        btnGround.setOnClickListener(new View.OnClickListener() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
-            @Override public void onClick(View v) {
-                if(isInitialized) {
-                    lastUserInteractionTs = Instant.now();
-                    String numGroundTruthPoints = groundSpinner.getSelectedItem().toString().replaceAll("[\\D]", "");
+        btnGround.setOnClickListener(v -> {
+            if(isInitialized) {
+                lastUserInteractionTs = System.currentTimeMillis();
+                String numGroundTruthPoints = groundSpinner.getSelectedItem().toString().replaceAll("[\\D]", "");
 
-                    btnGround.setText(Integer.toString(++groundTruthCounter) + " / "
-                                    + numGroundTruthPoints
-                    );
-                    playSound(mpGround);
+                btnGround.setText(Integer.toString(++groundTruthCounter) + " / " + numGroundTruthPoints);
+                playSound(mpGround);
 
-                    final GroundTruth groundTruth = sensorManager.getSensor(GroundTruth.class);
-                    groundTruth.writeGroundTruth(groundTruthCounter);
-                }
-                else{
-                    playSound(mpFailure);
-                }
+                final GroundTruth groundTruth = sensorManager.getSensor(GroundTruth.class);
+                groundTruth.writeGroundTruth(groundTruthCounter, SystemClock.elapsedRealtimeNanos());
+            }
+            else{
+                playSound(mpFailure);
             }
         });
 
@@ -294,7 +283,6 @@ public class MainActivity extends AppCompatActivity {
         }
         statisticsTimer = new Timer();
         statisticsTimer.scheduleAtFixedRate(new TimerTask() {
-            @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void run() {
                 updateDiagnostics(SystemClock.elapsedRealtimeNanos());
@@ -302,7 +290,6 @@ public class MainActivity extends AppCompatActivity {
         }, 250, 250);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     private void stop() {
         statisticsTimer.cancel();
         try {
@@ -337,18 +324,16 @@ public class MainActivity extends AppCompatActivity {
         return (evtCnt == 0) ? "-" : Long.toString(evtCnt);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     private void updateDiagnostics(final long timestamp) {
         runOnUiThread(() -> {
             { // update UI timer
                 final TextView txtClock = findViewById(R.id.txtClock);
-                Instant now = Instant.now();
-                Duration duration = Duration.between(lastUserInteractionTs, now);
-                long minutes = duration.toMinutes();
-                duration = duration.minusMinutes(minutes);
-                long milliseconds = duration.toMillis();
-                long seconds = (milliseconds / 1000);
-                milliseconds -= (seconds * 1000);
+                long now = System.currentTimeMillis();
+                long milliseconds = now - lastUserInteractionTs;
+                long minutes = TimeUnit.MILLISECONDS.toMinutes(milliseconds);
+                milliseconds -= TimeUnit.MINUTES.toMillis(minutes);
+                long seconds = TimeUnit.MILLISECONDS.toSeconds(milliseconds);
+                milliseconds -= TimeUnit.SECONDS.toMillis(seconds);
                 txtClock.setText(String.format("%02d:%02d.%03d", minutes, seconds, milliseconds));
             }
 
@@ -385,7 +370,6 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     protected void onStart() {
         super.onStart();
         if(!isInitialized) {
@@ -438,8 +422,6 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
     protected void setupActivityButtons() {
         // cleanup before recreation
         for(int i = 0; i < activityButtonContainer.getChildCount(); ++i) {
@@ -493,7 +475,7 @@ public class MainActivity extends AppCompatActivity {
             }
             currentButtonRow.addView(button, columnLayout);
             button.setOnClickListener(v -> {
-                lastUserInteractionTs = Instant.now();
+                lastUserInteractionTs = System.currentTimeMillis();
                 if(isInitialized) {
                     setActivityBtn(button.getPedestrianActivity(), true);
                 } else {
@@ -545,27 +527,23 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
         if(activeSensors.contains("WIFI") || activeSensors.contains("WIFIRTTSCAN")) {
-            if(Build.VERSION.SDK_INT == 28) { // there is no way to scan wifi in Android 9
-                new AlertDialog.Builder(this)
-                        .setMessage("Android 9 is not supported for Wifi-Scanning!")
-                        .show();
-                return false;
-            }
             WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
             boolean scanThrottleActive = false;
             try { // since android 9, wifi scan speed is crippled
-                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // Android 11
                     scanThrottleActive = wifiManager.isScanThrottleEnabled();
-                } else {
+                } else if(Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) { // Android 10
                     scanThrottleActive = (Settings.Global.getInt(this.getContentResolver(), "wifi_scan_throttle_enabled") == 1);
+                } else if(Build.VERSION.SDK_INT == Build.VERSION_CODES.P) { // Android 9 - no way to unthrottle
+                    scanThrottleActive = true;
                 }
             } catch (Settings.SettingNotFoundException e) {
                 e.printStackTrace();
             }
             if(scanThrottleActive) {
                 new AlertDialog.Builder(this)
-                        .setMessage("A wifi sensor is requested, but your Smartphone settings cripple wifi scanning!")
-                        .show();
+                    .setMessage("A wifi sensor is requested, but either your Smartphone settings or the Android version cripple wifi scanning!")
+                    .show();
                 return false;
             }
         }

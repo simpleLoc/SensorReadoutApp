@@ -2,17 +2,13 @@ package de.fhws.indoor.sensorreadout.loggers;
 
 import android.app.Activity;
 import android.content.Context;
-import android.os.Build;
 import android.os.SystemClock;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -106,21 +102,24 @@ public abstract class Logger {
     public static class FileMetadata {
         private String person;
         private String comment;
-        private Instant dateTime;
+        private Date dateTime;
 
-        @RequiresApi(api = Build.VERSION_CODES.O)
         public FileMetadata(String person, String comment) {
-            this(person, comment, Instant.now());
+            this(person, comment, new Date(System.currentTimeMillis()));
         }
-        public FileMetadata(String person, String comment, Instant dateTime) {
+        public FileMetadata(String person, String comment, Date dateTime) {
             this.person = person;
             this.comment = comment;
             this.dateTime = dateTime;
         }
 
-        @RequiresApi(api = Build.VERSION_CODES.O)
         protected String toCsv() {
-            String utcDateTime = dateTime.atOffset(ZoneOffset.UTC).toString();
+            //TODO: refactor this hack as soon as minAPILevel is raised:
+            // - above 24 -> SimpleDateFormatter with "yyyy-MM-dd'T'HH:mm:ss.SSSX" instead of 'Z' append hack
+            // - above 26 -> Use of the Instant class, Instant.now()
+            SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+            dateTimeFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+            String utcDateTime = dateTimeFormatter.format(dateTime);
             return utcDateTime + ";" + person + ";" + comment;
         }
     }
