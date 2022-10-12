@@ -40,19 +40,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import de.fhws.indoor.libsmartphonesensors.SensorManager;
-import de.fhws.indoor.sensorreadout.loggers.Logger;
+import de.fhws.indoor.libsmartphonesensors.loggers.Logger;
 import de.fhws.indoor.libsmartphonesensors.sensors.DecawaveUWB;
 import de.fhws.indoor.libsmartphonesensors.sensors.GroundTruth;
 import de.fhws.indoor.libsmartphonesensors.PedestrianActivity;
 import de.fhws.indoor.libsmartphonesensors.sensors.WiFiRTTScan;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
-import de.fhws.indoor.sensorreadout.loggers.TimedOrderedLogger;
+import de.fhws.indoor.libsmartphonesensors.loggers.TimedOrderedLogger;
 
 
 public class MainActivity extends AppCompatActivity {
 
     private static final long DEFAULT_WIFI_SCAN_INTERVAL = (Build.VERSION.SDK_INT == 28 ? 30 : 1);
     private static final PedestrianActivity DEFAULT_ACTIVITY = PedestrianActivity.STANDING;
+    public static final String FILE_PROVIDER_AUTHORITY = "de.fhws.indoor.sensorreadout.fileprovider";
 
     // sounds
     MediaPlayer mpStart;
@@ -63,9 +64,9 @@ public class MainActivity extends AppCompatActivity {
     // sensors
     SensorManager sensorManager = new SensorManager();
 
-    //private final Logger logger = new Logger(this);
-    //private final LoggerRAM logger = new LoggerRAM(this);
-    private final Logger logger = new TimedOrderedLogger(this);
+    //private final Logger logger = new Logger(this, FILE_PROVIDER_AUTHORITY);
+    //private final LoggerRAM logger = new LoggerRAM(this, FILE_PROVIDER_AUTHORITY);
+    private final Logger logger = new TimedOrderedLogger(this, FILE_PROVIDER_AUTHORITY);
     private Button btnStart;
     private Button btnMetadata;
     private Button btnStop;

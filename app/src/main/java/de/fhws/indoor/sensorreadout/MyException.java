@@ -12,12 +12,12 @@ public class MyException extends RuntimeException {
 
     public MyException(final String err, final Throwable t) {
         super(err, t);
-        Toast.makeText(MainActivity.getAppContext(), err, Toast.LENGTH_LONG);
+        Toast.makeText(MainActivity.getAppContext(), err, Toast.LENGTH_LONG).show();
     }
 
     public MyException(final String err) {
         super(err);
-        Toast.makeText(MainActivity.getAppContext(), err, Toast.LENGTH_LONG);
+        Toast.makeText(MainActivity.getAppContext(), err, Toast.LENGTH_LONG).show();
     }
 
 }
