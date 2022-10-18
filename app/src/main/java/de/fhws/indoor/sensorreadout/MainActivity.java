@@ -51,7 +51,7 @@ import de.fhws.indoor.libsmartphonesensors.loggers.TimedOrderedLogger;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final long DEFAULT_WIFI_SCAN_INTERVAL = (Build.VERSION.SDK_INT == 28 ? 30 : 1);
+    private static final long DEFAULT_WIFI_SCAN_INTERVAL = (Build.VERSION.SDK_INT == 28 ? 30000 : 1);
     private static final PedestrianActivity DEFAULT_ACTIVITY = PedestrianActivity.STANDING;
     public static final String FILE_PROVIDER_AUTHORITY = "de.fhws.indoor.sensorreadout.fileprovider";
 
