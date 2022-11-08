@@ -41,6 +41,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import de.fhws.indoor.libsmartphonesensors.SensorManager;
+import de.fhws.indoor.libsmartphonesensors.io.RecordingManager;
+import de.fhws.indoor.libsmartphonesensors.io.RecordingSession;
+import de.fhws.indoor.libsmartphonesensors.loggers.DataFolder;
 import de.fhws.indoor.libsmartphonesensors.loggers.Logger;
 import de.fhws.indoor.libsmartphonesensors.sensors.DecawaveUWB;
 import de.fhws.indoor.libsmartphonesensors.sensors.GroundTruth;
@@ -65,9 +68,9 @@ public class MainActivity extends AppCompatActivity {
     // sensors
     SensorManager sensorManager = new SensorManager();
 
-    //private final Logger logger = new Logger(this, FILE_PROVIDER_AUTHORITY);
-    //private final LoggerRAM logger = new LoggerRAM(this, FILE_PROVIDER_AUTHORITY);
-    private final Logger logger = new TimedOrderedLogger(this, FILE_PROVIDER_AUTHORITY);
+    private final Logger logger = new TimedOrderedLogger(this);
+    private RecordingManager recordingManager;
+
     private Button btnStart;
     private Button btnMetadata;
     private Button btnStop;
@@ -100,6 +103,7 @@ public class MainActivity extends AppCompatActivity {
 
         // context access
         MainActivity.context = getApplicationContext();
+        recordingManager = new RecordingManager(new DataFolder(context, "sensorOutFiles").getFolder(), FILE_PROVIDER_AUTHORITY);
 
         // setup sound-effects
         mpStart = MediaPlayer.create(this, R.raw.go);
@@ -119,9 +123,9 @@ public class MainActivity extends AppCompatActivity {
         });
 
         //init Path spinner
-        final Spinner pathSpinner = (Spinner) findViewById(R.id.pathspinner);
+        final Spinner pathSpinner = findViewById(R.id.pathspinner);
         List<String> pathList = new ArrayList<String>();
-        for (int i=0; i<=255; i++){
+        for (int i=0; i<=255; i++) {
             pathList.add("Path: " + i);
         }
         ArrayAdapter<String> pathDataAdapter = new ArrayAdapter<String>(this,
@@ -130,9 +134,9 @@ public class MainActivity extends AppCompatActivity {
         pathSpinner.setAdapter(pathDataAdapter);
 
         //init GroundTruthPoint spinner
-        final Spinner groundSpinner = (Spinner) findViewById(R.id.groundspinner);
+        final Spinner groundSpinner = findViewById(R.id.groundspinner);
         List<String> groundList = new ArrayList<String>();
-        for (int i=0; i<=255; i++){
+        for (int i=0; i<=255; i++) {
             groundList.add("Num: " + i);
         }
         ArrayAdapter<String> groundDataAdapter = new ArrayAdapter<String>(this,
@@ -141,15 +145,15 @@ public class MainActivity extends AppCompatActivity {
         groundSpinner.setAdapter(groundDataAdapter);
 
         //get Buttons
-        btnStart = (Button) findViewById(R.id.btnStart);
-        btnMetadata = (Button) findViewById(R.id.btnMetadata);
-        btnStop = (Button) findViewById(R.id.btnStop);
-        btnGround = (Button) findViewById(R.id.btnGround);
-        btnShareLast = (Button) findViewById(R.id.btnShareLast);
-        btnSettings = (Button) findViewById(R.id.btnSettings);
-        activityButtonContainer = (TableLayout) findViewById(R.id.pedestrianActivityButtonContainer);
+        btnStart = findViewById(R.id.btnStart);
+        btnMetadata = findViewById(R.id.btnMetadata);
+        btnStop = findViewById(R.id.btnStop);
+        btnGround = findViewById(R.id.btnGround);
+        btnShareLast = findViewById(R.id.btnShareLast);
+        btnSettings = findViewById(R.id.btnSettings);
+        activityButtonContainer = findViewById(R.id.pedestrianActivityButtonContainer);
 
-        prgCacheFillStatus = (ProgressBar) findViewById(R.id.prgCacheFillStatus);
+        prgCacheFillStatus = findViewById(R.id.prgCacheFillStatus);
 
         btnStart.setOnClickListener(v -> {
             if(!isInitialized) {
@@ -256,8 +260,7 @@ public class MainActivity extends AppCompatActivity {
                 Button alertDiscard = (Button) dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
                 alertDiscard.setGravity(Gravity.CENTER);
                 alertDiscard.getLayoutParams().width = LayoutParams.MATCH_PARENT;
-            }
-            else{
+            } else{
                 playSound(mpFailure);
             }
         });
@@ -279,7 +282,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         btnShareLast.setOnClickListener(v -> {
-            logger.shareLast(this);
+            recordingManager.shareNewest(this);
         });
 
         btnSettings.setOnClickListener(new View.OnClickListener() {
@@ -307,12 +310,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void start() {
-        logger.start(new Logger.FileMetadata(metaPerson, metaComment));
-        final TextView txt = (TextView) findViewById(R.id.txtFile);
-        txt.setText(logger.getName());
-
         try {
+            RecordingSession recordingSession = recordingManager.startNewSession();
+            logger.start(recordingSession, new Logger.FileMetadata(metaPerson, metaComment));
+            final TextView txt = findViewById(R.id.txtFile);
+            txt.setText(logger.getName());
             sensorManager.start(this);
+            //TODO: implement
+//            PhoneSensors phoneSensors = sensorManager.getSensor(PhoneSensors.class);
+//            if(phoneSensors != null) {
+//                phoneSensors.dumpVendors();
+//            }
         } catch (Exception e) {
             e.printStackTrace();
             //TODO: ui feedback?
@@ -335,6 +343,7 @@ public class MainActivity extends AppCompatActivity {
             //TODO: ui feedback?
         }
         logger.stop();
+        recordingManager.getCurrentSession().close();
         updateDiagnostics(SystemClock.elapsedRealtimeNanos());
         ((TextView) findViewById(R.id.txtEvtCntWifi)).setText("-");
         ((TextView) findViewById(R.id.txtEvtCntWifiRTT)).setText("-");
@@ -555,7 +564,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private boolean runPreStartChecks() {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        Set<String> activeSensors = preferences.getStringSet("prefActiveSensors", new HashSet<String>());
+        Set<String> activeSensors = preferences.getStringSet("prefActiveSensors", new HashSet<>());
         if(activeSensors.contains("WIFIRTTSCAN") && !WiFiRTTScan.isSupported(this)) {
             new AlertDialog.Builder(this)
                     .setMessage("This smartphone does not support WifiRTT")
