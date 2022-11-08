@@ -4,9 +4,11 @@ import android.app.Dialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 
@@ -23,6 +25,7 @@ public class RecordingCommentFragment extends DialogFragment {
 
     public RecordingCommentFragment(@NonNull ResultListener resultListener) {
         this.resultListener = resultListener;
+        setCancelable(false);
     }
 
     @NonNull
@@ -37,14 +40,15 @@ public class RecordingCommentFragment extends DialogFragment {
 
         // Inflate and set the layout for the dialog
         // Pass null as the parent view because its going in the dialog layout
-        builder.setView(view)
+        AlertDialog dialog = builder
+                .setView(view)
                 .setTitle(R.string.recording_comment_title)
                 // Add action buttons
-                .setPositiveButton(R.string.save, (dialog, id) -> {
+                .setPositiveButton(R.string.save, (dialogInterface, id) -> {
                     String comment = txtComment.getText().toString();
                     resultListener.onCommit(comment);
-                });
-
-        return builder.create();
+                })
+                .create();
+        return dialog;
     }
 }

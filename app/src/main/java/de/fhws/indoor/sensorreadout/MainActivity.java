@@ -29,6 +29,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.view.ViewGroup.LayoutParams;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -227,39 +228,35 @@ public class MainActivity extends AppCompatActivity {
                 //reset activity buttons
                 setActivityBtn(DEFAULT_ACTIVITY, false);
 
-                // open recording completed popup
-                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                CharSequence[] items = {"Foo", "Bar", "FooBar"};
-                builder
+                // open recording completed popup to ask user what to do with the recording
+                AlertDialog dialog = new AlertDialog.Builder(this)
                         .setTitle(R.string.recording_completed_title)
                         .setMessage(R.string.recording_completed_text)
+                        .setCancelable(false)
                         .setPositiveButton(R.string.ok, (dialogInterface, i) -> {
-                            // all good nothing to do
+                            recordingManager.getCurrentSession().close();
                         })
                         .setNegativeButton(R.string.ok_comment, (dialogInterface, i) -> {
-                            RecordingCommentFragment recordingCompletedDialog = new RecordingCommentFragment(new RecordingCommentFragment.ResultListener() {
-                                @Override public void onCommit(String comment) {
-                                    Log.d("RecCompletedDialog", "Comment: " + comment);
-                                    // append comment to file
-                                    //TODO: add comment to last recording
-                                }
+                            dialogInterface.dismiss();
+                            RecordingCommentFragment recordingCompletedDialog = new RecordingCommentFragment(comment -> {
+                                try {
+                                    recordingManager.getCurrentSession().closeWithRemark(comment);
+                                } catch (IOException e) { e.printStackTrace(); }
                             });
                             recordingCompletedDialog.show(getSupportFragmentManager(), "RecCompletedDialog");
                         })
                         .setNeutralButton(R.string.discard, (dialogInterface, i) -> {
-                            // delete recording
-                            //TODO: delete last recording
-                        });
-                AlertDialog dialog = builder.show();
-                Button alertOK = (Button) dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-                alertOK.setGravity(Gravity.CENTER);
-                alertOK.getLayoutParams().width = LayoutParams.MATCH_PARENT;
-                Button alertOKComment = (Button) dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
-                alertOKComment.setGravity(Gravity.CENTER);
-                alertOKComment.getLayoutParams().width = LayoutParams.MATCH_PARENT;
-                Button alertDiscard = (Button) dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
-                alertDiscard.setGravity(Gravity.CENTER);
-                alertDiscard.getLayoutParams().width = LayoutParams.MATCH_PARENT;
+                            recordingManager.getCurrentSession().abort();
+                        })
+                        .show();
+                { // Fix ugly horizontal design
+                    Button[] dialogButtons =
+                            new Button[]{dialog.getButton(AlertDialog.BUTTON_POSITIVE), dialog.getButton(AlertDialog.BUTTON_NEGATIVE), dialog.getButton(AlertDialog.BUTTON_NEUTRAL)};
+                    for (Button dialogBtn : dialogButtons) {
+                        dialogBtn.setGravity(Gravity.CENTER);
+                        dialogBtn.getLayoutParams().width = LayoutParams.MATCH_PARENT;
+                    }
+                }
             } else{
                 playSound(mpFailure);
             }
@@ -343,7 +340,6 @@ public class MainActivity extends AppCompatActivity {
             //TODO: ui feedback?
         }
         logger.stop();
-        recordingManager.getCurrentSession().close();
         updateDiagnostics(SystemClock.elapsedRealtimeNanos());
         ((TextView) findViewById(R.id.txtEvtCntWifi)).setText("-");
         ((TextView) findViewById(R.id.txtEvtCntWifiRTT)).setText("-");
