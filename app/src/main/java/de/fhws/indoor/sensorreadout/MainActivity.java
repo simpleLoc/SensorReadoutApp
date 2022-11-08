@@ -17,6 +17,7 @@ import androidx.preference.PreferenceManager;
 
 import android.provider.Settings;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -221,6 +222,40 @@ public class MainActivity extends AppCompatActivity {
 
                 //reset activity buttons
                 setActivityBtn(DEFAULT_ACTIVITY, false);
+
+                // open recording completed popup
+                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                CharSequence[] items = {"Foo", "Bar", "FooBar"};
+                builder
+                        .setTitle(R.string.recording_completed_title)
+                        .setMessage(R.string.recording_completed_text)
+                        .setPositiveButton(R.string.ok, (dialogInterface, i) -> {
+                            // all good nothing to do
+                        })
+                        .setNegativeButton(R.string.ok_comment, (dialogInterface, i) -> {
+                            RecordingCommentFragment recordingCompletedDialog = new RecordingCommentFragment(new RecordingCommentFragment.ResultListener() {
+                                @Override public void onCommit(String comment) {
+                                    Log.d("RecCompletedDialog", "Comment: " + comment);
+                                    // append comment to file
+                                    //TODO: add comment to last recording
+                                }
+                            });
+                            recordingCompletedDialog.show(getSupportFragmentManager(), "RecCompletedDialog");
+                        })
+                        .setNeutralButton(R.string.discard, (dialogInterface, i) -> {
+                            // delete recording
+                            //TODO: delete last recording
+                        });
+                AlertDialog dialog = builder.show();
+                Button alertOK = (Button) dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                alertOK.setGravity(Gravity.CENTER);
+                alertOK.getLayoutParams().width = LayoutParams.MATCH_PARENT;
+                Button alertOKComment = (Button) dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+                alertOKComment.setGravity(Gravity.CENTER);
+                alertOKComment.getLayoutParams().width = LayoutParams.MATCH_PARENT;
+                Button alertDiscard = (Button) dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
+                alertDiscard.setGravity(Gravity.CENTER);
+                alertDiscard.getLayoutParams().width = LayoutParams.MATCH_PARENT;
             }
             else{
                 playSound(mpFailure);

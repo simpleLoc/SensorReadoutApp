@@ -12,6 +12,14 @@
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
 
+    <!-- Recording completed dialog -->
+    <string name="recording_completed_title">Recording successful?</string>
+    <string name="recording_completed_text">Was the recording successful or do you want to append a comment.</string>
+    <string name="recording_comment_title">What went wrong?</string>
+    <string name="ok">Yes</string>
+    <string name="ok_comment">Yes, but post-processing required</string>
+    <string name="discard">No, delete</string>
+
     <string name="gps_not_enabled">GPS / Location-Service is not enabled. Please enable it now.</string>
     <string name="open_location_settings">Open location settings</string>
 
