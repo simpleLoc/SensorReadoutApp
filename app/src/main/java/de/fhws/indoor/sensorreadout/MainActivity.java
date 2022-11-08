@@ -52,6 +52,9 @@ import de.fhws.indoor.libsmartphonesensors.PedestrianActivity;
 import de.fhws.indoor.libsmartphonesensors.sensors.WiFiRTTScan;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
 import de.fhws.indoor.libsmartphonesensors.loggers.TimedOrderedLogger;
+import de.fhws.indoor.sensorreadout.dialogs.MetadataFragment;
+import de.fhws.indoor.sensorreadout.dialogs.RecordingCommentFragment;
+import de.fhws.indoor.sensorreadout.dialogs.RecordingSuccessfulDialog;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -229,34 +232,15 @@ public class MainActivity extends AppCompatActivity {
                 setActivityBtn(DEFAULT_ACTIVITY, false);
 
                 // open recording completed popup to ask user what to do with the recording
-                AlertDialog dialog = new AlertDialog.Builder(this)
-                        .setTitle(R.string.recording_completed_title)
-                        .setMessage(R.string.recording_completed_text)
-                        .setCancelable(false)
-                        .setPositiveButton(R.string.ok, (dialogInterface, i) -> {
-                            recordingManager.getCurrentSession().close();
-                        })
-                        .setNegativeButton(R.string.ok_comment, (dialogInterface, i) -> {
-                            dialogInterface.dismiss();
-                            RecordingCommentFragment recordingCompletedDialog = new RecordingCommentFragment(comment -> {
-                                try {
-                                    recordingManager.getCurrentSession().closeWithRemark(comment);
-                                } catch (IOException e) { e.printStackTrace(); }
-                            });
-                            recordingCompletedDialog.show(getSupportFragmentManager(), "RecCompletedDialog");
-                        })
-                        .setNeutralButton(R.string.discard, (dialogInterface, i) -> {
-                            recordingManager.getCurrentSession().abort();
-                        })
-                        .show();
-                { // Fix ugly horizontal design
-                    Button[] dialogButtons =
-                            new Button[]{dialog.getButton(AlertDialog.BUTTON_POSITIVE), dialog.getButton(AlertDialog.BUTTON_NEGATIVE), dialog.getButton(AlertDialog.BUTTON_NEUTRAL)};
-                    for (Button dialogBtn : dialogButtons) {
-                        dialogBtn.setGravity(Gravity.CENTER);
-                        dialogBtn.getLayoutParams().width = LayoutParams.MATCH_PARENT;
+                RecordingSuccessfulDialog.show(this, new RecordingSuccessfulDialog.ResultListener() {
+                    @Override public void onCommit() { recordingManager.getCurrentSession().close(); }
+                    @Override public void onCommitWithRemark(String remark) {
+                        try {
+                            recordingManager.getCurrentSession().closeWithRemark(remark);
+                        } catch (IOException e) { e.printStackTrace(); }
                     }
-                }
+                    @Override public void onReject() { recordingManager.getCurrentSession().abort(); }
+                });
             } else{
                 playSound(mpFailure);
             }
@@ -279,7 +263,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         btnShareLast.setOnClickListener(v -> {
-            recordingManager.shareNewest(this);
+            recordingManager.shareLast(this);
         });
 
         btnSettings.setOnClickListener(new View.OnClickListener() {
