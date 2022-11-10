@@ -1,6 +1,7 @@
 package de.fhws.indoor.sensorreadout;
 
 import android.app.ActivityManager;
+import android.bluetooth.le.AdvertisingSetParameters;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -17,7 +18,6 @@ import androidx.preference.PreferenceManager;
 
 import android.provider.Settings;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -54,7 +54,6 @@ import de.fhws.indoor.libsmartphonesensors.sensors.WiFiRTTScan;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
 import de.fhws.indoor.libsmartphonesensors.loggers.TimedOrderedLogger;
 import de.fhws.indoor.sensorreadout.dialogs.MetadataFragment;
-import de.fhws.indoor.sensorreadout.dialogs.RecordingCommentFragment;
 import de.fhws.indoor.sensorreadout.dialogs.RecordingSuccessfulDialog;
 
 
@@ -71,7 +70,8 @@ public class MainActivity extends AppCompatActivity {
     MediaPlayer mpFailure;
 
     // sensors
-    SensorManager sensorManager = new SensorManager();
+    private SensorManager sensorManager = new SensorManager();
+    private RecordingStateBLEBroadcaster recordingStateBLEBroadcaster;
 
     private final Logger logger = new TimedOrderedLogger(this);
     private RecordingManager recordingManager;
@@ -108,6 +108,9 @@ public class MainActivity extends AppCompatActivity {
 
         // context access
         MainActivity.context = getApplicationContext();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            recordingStateBLEBroadcaster = new RecordingStateBLEBroadcaster(this);
+        }
         recordingManager = new RecordingManager(new DataFolder(context, "sensorOutFiles").getFolder(), FILE_PROVIDER_AUTHORITY);
 
         // setup sound-effects
@@ -165,6 +168,9 @@ public class MainActivity extends AppCompatActivity {
                 lastUserInteractionTs = System.currentTimeMillis();
                 //if(!runPreStartChecks()) { return; }
                 start();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    recordingStateBLEBroadcaster.startRecording(recordingManager.getCurrentSession());
+                }
                 isInitialized = true;
                 playSound(mpStart);
                 resetStatistics();
@@ -225,6 +231,10 @@ public class MainActivity extends AppCompatActivity {
                 resetStatistics();
                 isInitialized = false;
                 playSound(mpStop);
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    recordingStateBLEBroadcaster.stopRecording(recordingManager.getCurrentSession());
+                }
 
                 //Enable the spinners
                 groundSpinner.setEnabled(true);
