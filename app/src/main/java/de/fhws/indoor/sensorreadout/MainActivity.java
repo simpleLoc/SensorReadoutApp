@@ -29,6 +29,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.view.ViewGroup.LayoutParams;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -186,6 +187,8 @@ public class MainActivity extends AppCompatActivity {
                 groundSpinner.setEnabled(false);
                 pathSpinner.setEnabled(false);
                 btnShareLast.setEnabled(false);
+
+                dumpVendorInfo();
             } else {
                 playSound(mpFailure);
             }
@@ -583,4 +586,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void dumpVendorInfo() {
+        File vendorFile = new File(recordingManager.getRootPath(), "vendors.txt");
+        try {
+            sensorManager.dumpVendorInformation(this, vendorFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
