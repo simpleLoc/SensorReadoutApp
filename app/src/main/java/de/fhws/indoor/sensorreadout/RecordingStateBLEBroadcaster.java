@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.util.UUID;
 
 import de.fhws.indoor.libsmartphonesensors.io.RecordingSession;
+import de.fhws.indoor.libsmartphonesensors.util.ble.MultiPermissionRequester;
 import de.fhws.indoor.libsmartphonesensors.util.ble.OneTimeBeaconSender;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
@@ -19,8 +20,8 @@ public class RecordingStateBLEBroadcaster {
     private static final byte EVENTCODE_START = 0;
     private static final byte EVENTCODE_END = 1;
 
-    public RecordingStateBLEBroadcaster(AppCompatActivity activity) {
-        beaconSender = new OneTimeBeaconSender(activity);
+    public RecordingStateBLEBroadcaster(MultiPermissionRequester permissionRequester) {
+        beaconSender = new OneTimeBeaconSender(permissionRequester);
     }
 
     public void startRecording(RecordingSession recordingSession) {

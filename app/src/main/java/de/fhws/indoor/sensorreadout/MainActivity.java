@@ -53,6 +53,7 @@ import de.fhws.indoor.libsmartphonesensors.PedestrianActivity;
 import de.fhws.indoor.libsmartphonesensors.sensors.WiFiRTTScan;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
 import de.fhws.indoor.libsmartphonesensors.loggers.TimedOrderedLogger;
+import de.fhws.indoor.libsmartphonesensors.util.ble.MultiPermissionRequester;
 import de.fhws.indoor.sensorreadout.dialogs.MetadataFragment;
 import de.fhws.indoor.sensorreadout.dialogs.RecordingSuccessfulDialog;
 
@@ -87,6 +88,7 @@ public class MainActivity extends AppCompatActivity {
     private HashMap<PedestrianActivity, PedestrianActivityButton> activityButtons = new HashMap<>();
     private PedestrianActivity currentPedestrianActivity = DEFAULT_ACTIVITY;
     private Timer statisticsTimer = null;
+    private MultiPermissionRequester permissionRequester = new MultiPermissionRequester(this);
 
     private int groundTruthCounter = 0;
     private long lastUserInteractionTs;
@@ -109,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
         // context access
         MainActivity.context = getApplicationContext();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            recordingStateBLEBroadcaster = new RecordingStateBLEBroadcaster(this);
+            recordingStateBLEBroadcaster = new RecordingStateBLEBroadcaster(permissionRequester);
         }
         recordingManager = new RecordingManager(new DataFolder(context, "sensorOutFiles").getFolder(), FILE_PROVIDER_AUTHORITY);
 
@@ -310,14 +312,9 @@ public class MainActivity extends AppCompatActivity {
             final TextView txt = findViewById(R.id.txtFile);
             txt.setText(logger.getName());
             sensorManager.start(this);
-            //TODO: implement
-//            PhoneSensors phoneSensors = sensorManager.getSensor(PhoneSensors.class);
-//            if(phoneSensors != null) {
-//                phoneSensors.dumpVendors();
-//            }
         } catch (Exception e) {
             e.printStackTrace();
-            //TODO: ui feedback?
+            Toast.makeText(this, "Failed to start SensorManager", Toast.LENGTH_LONG).show();
         }
         statisticsTimer = new Timer();
         statisticsTimer.scheduleAtFixedRate(new TimerTask() {
@@ -334,7 +331,7 @@ public class MainActivity extends AppCompatActivity {
             sensorManager.stop(this);
         } catch (Exception e) {
             e.printStackTrace();
-            //TODO: ui feedback?
+            Toast.makeText(this, "Failed to stop SensorManager", Toast.LENGTH_LONG).show();
         }
         logger.stop();
         updateDiagnostics(SystemClock.elapsedRealtimeNanos());
@@ -545,10 +542,11 @@ public class MainActivity extends AppCompatActivity {
         config.ftmRangingIntervalMSec = Long.parseLong(preferences.getString("prefFtmRangingIntervalMSec", Long.toString(DEFAULT_WIFI_SCAN_INTERVAL)));
 
         try {
-            sensorManager.configure(this, config);
+            sensorManager.configure(this, config, permissionRequester);
+            permissionRequester.launch();
         } catch (Exception e) {
             e.printStackTrace();
-            //TODO: ui feedback?
+            Toast.makeText(this, "Failed to configure sensors", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -602,6 +600,7 @@ public class MainActivity extends AppCompatActivity {
             sensorManager.dumpVendorInformation(this, vendorFile);
         } catch (Exception e) {
             e.printStackTrace();
+            Toast.makeText(this, "Failed to dump vendor info", Toast.LENGTH_LONG).show();
         }
     }
 }
