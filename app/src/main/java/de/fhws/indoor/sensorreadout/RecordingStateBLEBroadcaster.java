@@ -4,13 +4,12 @@ import android.bluetooth.le.AdvertisingSetParameters;
 import android.os.Build;
 
 import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AppCompatActivity;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
 import de.fhws.indoor.libsmartphonesensors.io.RecordingSession;
-import de.fhws.indoor.libsmartphonesensors.util.ble.MultiPermissionRequester;
+import de.fhws.indoor.libsmartphonesensors.util.MultiPermissionRequester;
 import de.fhws.indoor.libsmartphonesensors.util.ble.OneTimeBeaconSender;
 
 @RequiresApi(api = Build.VERSION_CODES.O)

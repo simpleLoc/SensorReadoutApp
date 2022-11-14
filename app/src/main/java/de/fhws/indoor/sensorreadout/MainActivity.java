@@ -53,7 +53,7 @@ import de.fhws.indoor.libsmartphonesensors.PedestrianActivity;
 import de.fhws.indoor.libsmartphonesensors.sensors.WiFiRTTScan;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
 import de.fhws.indoor.libsmartphonesensors.loggers.TimedOrderedLogger;
-import de.fhws.indoor.libsmartphonesensors.util.ble.MultiPermissionRequester;
+import de.fhws.indoor.libsmartphonesensors.util.MultiPermissionRequester;
 import de.fhws.indoor.sensorreadout.dialogs.MetadataFragment;
 import de.fhws.indoor.sensorreadout.dialogs.RecordingSuccessfulDialog;
 
