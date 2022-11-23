@@ -1,7 +1,6 @@
 package de.fhws.indoor.sensorreadout;
 
 import android.app.ActivityManager;
-import android.bluetooth.le.AdvertisingSetParameters;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;

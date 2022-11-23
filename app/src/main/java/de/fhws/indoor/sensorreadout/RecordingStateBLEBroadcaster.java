@@ -16,6 +16,7 @@ import de.fhws.indoor.libsmartphonesensors.util.ble.OneTimeBeaconSender;
 public class RecordingStateBLEBroadcaster {
     private OneTimeBeaconSender beaconSender;
 
+    private static final byte[] SRO_MAGIC_BYTES = new String("SRO").getBytes();
     private static final byte EVENTCODE_START = 0;
     private static final byte EVENTCODE_END = 1;
 
@@ -25,20 +26,22 @@ public class RecordingStateBLEBroadcaster {
 
     public void startRecording(RecordingSession recordingSession) {
         UUID recordingId = recordingSession.getRecordingId();
-        ByteBuffer byteBuffer = ByteBuffer.allocate(17);
+        ByteBuffer byteBuffer = ByteBuffer.allocate(20);
+        byteBuffer.put(SRO_MAGIC_BYTES);
         byteBuffer.put(EVENTCODE_START);
         byteBuffer.putLong(recordingId.getMostSignificantBits());
         byteBuffer.putLong(recordingId.getLeastSignificantBits());
-        beaconSender.send(AdvertisingSetParameters.TX_POWER_HIGH, byteBuffer.array(), 300);
+        beaconSender.sendTimeouted(AdvertisingSetParameters.TX_POWER_HIGH, byteBuffer.array(), 300);
     }
 
     public void stopRecording(RecordingSession recordingSession) {
         UUID recordingId = recordingSession.getRecordingId();
-        ByteBuffer byteBuffer = ByteBuffer.allocate(17);
+        ByteBuffer byteBuffer = ByteBuffer.allocate(20);
+        byteBuffer.put(SRO_MAGIC_BYTES);
         byteBuffer.put(EVENTCODE_END);
         byteBuffer.putLong(recordingId.getMostSignificantBits());
         byteBuffer.putLong(recordingId.getLeastSignificantBits());
-        beaconSender.send(AdvertisingSetParameters.TX_POWER_HIGH, byteBuffer.array(), 300);
+        beaconSender.sendTimeouted(AdvertisingSetParameters.TX_POWER_HIGH, byteBuffer.array(), 300);
     }
 
 }
