@@ -545,6 +545,7 @@ public class MainActivity extends AppCompatActivity {
         config.hasDecawaveUWB = activeSensors.contains("DECAWAVE_UWB");
         config.hasStepDetector = activeSensors.contains("STEP_DETECTOR");
         config.hasHeadingChange = activeSensors.contains("HEADING_CHANGE");
+        config.hasMicrophone = activeSensors.contains("MICROPHONE");
 
         config.decawaveUWBTagMacAddress = preferences.getString("prefDecawaveUWBTagMacAddress", "");
         config.wifiScanIntervalMSec = Long.parseLong(preferences.getString("prefWifiScanIntervalMSec", Long.toString(DEFAULT_WIFI_SCAN_INTERVAL)));

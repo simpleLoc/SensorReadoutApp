@@ -34,6 +34,7 @@
         <item>Heading Change</item>
         <item>Step Detector</item>
         <item>Decawave UWB</item>
+        <item>Microphone</item>
     </string-array>
     <string-array name="prefActiveSensorsValues">
         <item>GPS</item>
@@ -44,6 +45,7 @@
         <item>HEADING_CHANGE</item>
         <item>STEP_DETECTOR</item>
         <item>DECAWAVE_UWB</item>
+        <item>MICROPHONE</item>
     </string-array>
     <string-array name="prefActiveSensorsDefault">
         <item>GPS</item>
