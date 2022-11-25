@@ -30,6 +30,7 @@ import android.view.ViewGroup.LayoutParams;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,6 +42,7 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import de.fhws.indoor.libsmartphonesensors.SensorDataInterface;
 import de.fhws.indoor.libsmartphonesensors.SensorManager;
 import de.fhws.indoor.libsmartphonesensors.io.RecordingManager;
 import de.fhws.indoor.libsmartphonesensors.io.RecordingSession;
@@ -70,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
     MediaPlayer mpFailure;
 
     // sensors
-    private SensorManager sensorManager = new SensorManager();
+    private SensorManager sensorManager;
     private RecordingStateBLEBroadcaster recordingStateBLEBroadcaster;
 
     private final Logger logger = new TimedOrderedLogger(this);
@@ -121,14 +123,22 @@ public class MainActivity extends AppCompatActivity {
         mpFailure = MediaPlayer.create(this, R.raw.error);
 
         //configure sensorManager
-        sensorManager.addSensorListener((timestamp, id, csv) -> {
-            logger.addCSV(id, timestamp, csv);
-            // update UI for WIFI/BEACON/GPS
-            if(id == SensorType.WIFI) { runOnUiThread(() -> loadCounterWifi.incrementAndGet()); }
-            if(id == SensorType.WIFIRTT) { runOnUiThread(() -> loadCounterWifiRTT.incrementAndGet()); }
-            if(id == SensorType.IBEACON) { runOnUiThread(() -> loadCounterBeacon.incrementAndGet()); }
-            if(id == SensorType.GPS) { runOnUiThread(() -> loadCounterGPS.incrementAndGet()); }
-            if(id == SensorType.DECAWAVE_UWB) { runOnUiThread(() -> loadCounterUWB.incrementAndGet()); }
+        sensorManager = new SensorManager(new SensorDataInterface() {
+            @Override
+            public void onData(long timestamp, SensorType id, String csv) {
+                logger.addCSV(id, timestamp, csv);
+                // update UI for WIFI/BEACON/GPS
+                if(id == SensorType.WIFI) { loadCounterWifi.incrementAndGet(); }
+                if(id == SensorType.WIFIRTT) { loadCounterWifiRTT.incrementAndGet(); }
+                if(id == SensorType.IBEACON) { loadCounterBeacon.incrementAndGet(); }
+                if(id == SensorType.GPS) { loadCounterGPS.incrementAndGet(); }
+                if(id == SensorType.DECAWAVE_UWB) { loadCounterUWB.incrementAndGet(); }
+            }
+
+            @Override
+            public OutputStream requestAuxiliaryChannel(String id) throws IOException {
+                return recordingManager.getCurrentSession().openAuxiliaryChannel(id);
+            }
         });
 
         //init Path spinner
