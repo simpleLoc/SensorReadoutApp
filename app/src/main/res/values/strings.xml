@@ -56,6 +56,8 @@
 
     <string name="prefActiveActions">Active Pedestrian-Actions</string>
     <string name="prefActiveActionsSummary">Choose which Pedestrian-Actions should be available to choose from during recording.</string>
+    <string name="prefFtmBurstSizeSummary">Number of measurement packets per burst. 0 for default of device.</string>
+    <string name="prefFtmBurstSizeTitle">FTM burst size</string>
     <string-array name="prefActiveActionsEntries">
         <item>Walk</item>
         <item>Elevator Up/Down</item>

@@ -32,5 +32,11 @@
         app:key="prefDecawaveUWBTagMacAddress"
         app:singleLine="true"
         app:title="Decawave UWB Tag MAC-Address" />
+    <EditTextPreference
+        app:key="prefFtmBurstSize"
+        app:defaultValue="0"
+        app:singleLine="true"
+        app:summary="@string/prefFtmBurstSizeSummary"
+        app:title="@string/prefFtmBurstSizeTitle" />
 
 </PreferenceScreen>
