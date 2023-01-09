@@ -125,6 +125,9 @@ public class MainActivity extends AppCompatActivity {
         //configure sensorManager
         sensorManager = new SensorManager(new SensorDataInterface() {
             @Override
+            public long getStartTimestamp() { return logger.getStartTS(); }
+
+            @Override
             public void onData(long timestamp, SensorType id, String csv) {
                 logger.addCSV(id, timestamp, csv);
                 // update UI for WIFI/BEACON/GPS
