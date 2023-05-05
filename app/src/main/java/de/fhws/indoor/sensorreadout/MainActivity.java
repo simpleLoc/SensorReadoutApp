@@ -51,6 +51,7 @@ import de.fhws.indoor.libsmartphonesensors.loggers.Logger;
 import de.fhws.indoor.libsmartphonesensors.sensors.DecawaveUWB;
 import de.fhws.indoor.libsmartphonesensors.sensors.GroundTruth;
 import de.fhws.indoor.libsmartphonesensors.PedestrianActivity;
+import de.fhws.indoor.libsmartphonesensors.sensors.WiFi;
 import de.fhws.indoor.libsmartphonesensors.sensors.WiFiRTTScan;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
 import de.fhws.indoor.libsmartphonesensors.loggers.TimedOrderedLogger;
@@ -388,11 +389,14 @@ public class MainActivity extends AppCompatActivity {
 
             EventCounterView evtCounterView = findViewById(R.id.event_counter_view);
             evtCounterView.updateCounterData(counterData -> {
-                counterData.evtCntBLE = loadCounterBeacon.get();
-                counterData.evtCntFTM = loadCounterWifiRTT.get();
-                counterData.evtCntGPS = loadCounterGPS.get();
-                counterData.evtCntUWB = loadCounterUWB.get();
                 DecawaveUWB sensorUWB = sensorManager.getSensor(DecawaveUWB.class);
+                WiFi sensorWifi = sensorManager.getSensor(WiFi.class);
+                counterData.wifiEvtCnt = loadCounterWifi.get();
+                counterData.wifiScanCnt = (sensorWifi != null) ? sensorWifi.getScanResultCount() : 0;
+                counterData.bleEvtCnt = loadCounterBeacon.get();
+                counterData.ftmEvtCnt = loadCounterWifiRTT.get();
+                counterData.gpsEvtCnt = loadCounterGPS.get();
+                counterData.uwbEvtCnt = loadCounterUWB.get();
                 counterData.uwbState = EventCounterView.UWBState.from(sensorUWB);
             });
         });
