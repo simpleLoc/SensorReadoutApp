@@ -393,13 +393,7 @@ public class MainActivity extends AppCompatActivity {
                 counterData.evtCntGPS = loadCounterGPS.get();
                 counterData.evtCntUWB = loadCounterUWB.get();
                 DecawaveUWB sensorUWB = sensorManager.getSensor(DecawaveUWB.class);
-                if(sensorUWB != null) {
-                    if(sensorUWB.isConnectedToTag()) { counterData.uwbState = EventCounterView.UWBState.CONNECTED; }
-                    else if(sensorUWB.isCurrentlyConnecting()) { counterData.uwbState = EventCounterView.UWBState.CONNECTING; }
-                    else { counterData.uwbState = EventCounterView.UWBState.CONNECTING_FAILED; }
-                } else {
-                    counterData.uwbState = EventCounterView.UWBState.NONE;
-                }
+                counterData.uwbState = EventCounterView.UWBState.from(sensorUWB);
             });
         });
     }
