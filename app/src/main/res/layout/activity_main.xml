@@ -80,7 +80,6 @@
         </LinearLayout>
     </LinearLayout>
 
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -124,58 +123,20 @@
         android:columnCount="7"
         android:rowCount="2">
 
-        <TextView
-            android:id="@+id/lblCntWifi"
+        <de.fhws.indoor.libsmartphonesensors.ui.EventCounterView
+            android:id="@+id/event_counter_view"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="fill_horizontal|left"
-            android:background="@drawable/border"
-            android:paddingHorizontal="3dp"
-            android:text="Wifi"
-            android:textColor="#ffffff" />
-
-        <TextView
-            android:id="@+id/lblCntWifiRTT"
-            android:layout_height="wrap_content"
-            android:layout_gravity="fill_horizontal|left"
-            android:background="@drawable/border"
-            android:paddingHorizontal="3dp"
-            android:text="FTM"
-            android:textColor="#ffffff" />
-
-        <TextView
-            android:id="@+id/lblCntBeacon"
-            android:layout_height="wrap_content"
-            android:layout_gravity="fill_horizontal|left"
-            android:background="@drawable/border"
-            android:paddingHorizontal="3dp"
-            android:text="BLE"
-            android:textColor="#ffffff" />
-
-        <TextView
-            android:id="@+id/lblCntUWB"
-            android:layout_height="wrap_content"
-            android:layout_gravity="fill_horizontal|left"
-            android:background="@drawable/border"
-            android:paddingHorizontal="3dp"
-            android:text="UWB"
-            android:textColor="#ffffff" />
-
-        <TextView
-            android:id="@+id/lblCntGPS"
-            android:layout_height="wrap_content"
-            android:layout_gravity="fill_horizontal|left"
-            android:background="@drawable/border"
-            android:paddingHorizontal="3dp"
-            android:text="GPS"
-            android:textColor="#ffffff" />
+            android:layout_rowSpan="2"/>
 
         <TextView
             android:id="@+id/txtBuffer"
             android:layout_width="0dp"
+            android:layout_columnWeight="1"
             android:layout_height="match_parent"
             android:layout_rowSpan="2"
             android:layout_gravity="fill_horizontal|fill_vertical"
-            android:gravity="right"
+            android:gravity="end"
             android:lines="2"
             android:maxLines="2"
             android:paddingLeft="3dip"
@@ -197,59 +158,7 @@
             android:max="1000"
             android:progress="0"
             android:rotation="-90" />
-
-        <TextView
-            android:id="@+id/txtEvtCntWifi"
-            android:layout_height="wrap_content"
-            android:layout_gravity="fill_horizontal|left"
-            android:background="@drawable/border"
-            android:paddingHorizontal="3dp"
-            android:text="-"
-            android:textColor="#ffffff"
-            android:textSize="10dp" />
-
-        <TextView
-            android:id="@+id/txtEvtCntWifiRTT"
-            android:layout_height="wrap_content"
-            android:layout_gravity="fill_horizontal|left"
-            android:background="@drawable/border"
-            android:paddingHorizontal="3dp"
-            android:text="-"
-            android:textColor="#ffffff"
-            android:textSize="10dp" />
-
-        <TextView
-            android:id="@+id/txtEvtCntBeacon"
-            android:layout_height="wrap_content"
-            android:layout_gravity="fill_horizontal|left"
-            android:background="@drawable/border"
-            android:paddingHorizontal="3dp"
-            android:text="-"
-            android:textColor="#ffffff"
-            android:textSize="10dp" />
-
-        <TextView
-            android:id="@+id/txtEvtCntUWB"
-            android:layout_height="wrap_content"
-            android:layout_gravity="fill_horizontal|left"
-            android:background="@drawable/border"
-            android:paddingHorizontal="3dp"
-            android:text="-"
-            android:textColor="#ffffff"
-            android:textSize="10dp" />
-
-        <TextView
-            android:id="@+id/txtEvtCntGPS"
-            android:layout_height="wrap_content"
-            android:layout_gravity="fill_horizontal|left"
-            android:background="@drawable/border"
-            android:paddingHorizontal="3dp"
-            android:text="-"
-            android:textColor="#ffffff"
-            android:textSize="10dp" />
-
     </GridLayout>
-
 
     <TableLayout
         android:id="@+id/pedestrianActivityButtonContainer"

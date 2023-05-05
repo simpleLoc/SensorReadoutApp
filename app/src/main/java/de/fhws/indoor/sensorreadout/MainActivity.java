@@ -54,6 +54,7 @@ import de.fhws.indoor.libsmartphonesensors.PedestrianActivity;
 import de.fhws.indoor.libsmartphonesensors.sensors.WiFiRTTScan;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
 import de.fhws.indoor.libsmartphonesensors.loggers.TimedOrderedLogger;
+import de.fhws.indoor.libsmartphonesensors.ui.EventCounterView;
 import de.fhws.indoor.libsmartphonesensors.util.MultiPermissionRequester;
 import de.fhws.indoor.sensorreadout.dialogs.MetadataFragment;
 import de.fhws.indoor.sensorreadout.dialogs.RecordingSuccessfulDialog;
@@ -347,11 +348,6 @@ public class MainActivity extends AppCompatActivity {
         }
         logger.stop();
         updateDiagnostics(SystemClock.elapsedRealtimeNanos());
-        ((TextView) findViewById(R.id.txtEvtCntWifi)).setText("-");
-        ((TextView) findViewById(R.id.txtEvtCntWifiRTT)).setText("-");
-        ((TextView) findViewById(R.id.txtEvtCntBeacon)).setText("-");
-        ((TextView) findViewById(R.id.txtEvtCntUWB)).setText("-");
-        ((TextView) findViewById(R.id.txtEvtCntGPS)).setText("-");
     }
 
     /** new sensor data */
@@ -390,24 +386,21 @@ public class MainActivity extends AppCompatActivity {
             txt.setText((logger.getSizeTotal() / 1024) + "kB, " + logger.getEventCnt() + "ev\n" + kBPerMin + "kB/m");
             prgCacheFillStatus.setProgress((int)(logger.getCacheLevel() * 1000));
 
-            final TextView txtWifi = (TextView) findViewById(R.id.txtEvtCntWifi);
-            txtWifi.setText(makeStatusString(loadCounterWifi.get()));
-            final TextView txtWifiRTT = (TextView) findViewById(R.id.txtEvtCntWifiRTT);
-            txtWifiRTT.setText(makeStatusString(loadCounterWifiRTT.get()));
-            final TextView txtBeacon = (TextView) findViewById(R.id.txtEvtCntBeacon);
-            txtBeacon.setText(makeStatusString(loadCounterBeacon.get()));
-            final TextView txtGPS = (TextView) findViewById(R.id.txtEvtCntGPS);
-
-            txtGPS.setText(makeStatusString(loadCounterGPS.get()));
-            final TextView txtUWB = (TextView) findViewById(R.id.txtEvtCntUWB);
-            DecawaveUWB sensorUWB = sensorManager.getSensor(DecawaveUWB.class);
-            if(sensorUWB != null) {
-                if(sensorUWB.isConnectedToTag()) {
-                    txtUWB.setText(makeStatusString(loadCounterUWB.get()));
+            EventCounterView evtCounterView = findViewById(R.id.event_counter_view);
+            evtCounterView.updateCounterData(counterData -> {
+                counterData.evtCntBLE = loadCounterBeacon.get();
+                counterData.evtCntFTM = loadCounterWifiRTT.get();
+                counterData.evtCntGPS = loadCounterGPS.get();
+                counterData.evtCntUWB = loadCounterUWB.get();
+                DecawaveUWB sensorUWB = sensorManager.getSensor(DecawaveUWB.class);
+                if(sensorUWB != null) {
+                    if(sensorUWB.isConnectedToTag()) { counterData.uwbState = EventCounterView.UWBState.CONNECTED; }
+                    else if(sensorUWB.isCurrentlyConnecting()) { counterData.uwbState = EventCounterView.UWBState.CONNECTING; }
+                    else { counterData.uwbState = EventCounterView.UWBState.CONNECTING_FAILED; }
                 } else {
-                    txtUWB.setText(sensorUWB.isCurrentlyConnecting() ? "⌛" : "✖");
+                    counterData.uwbState = EventCounterView.UWBState.NONE;
                 }
-            }
+            });
         });
     }
 
