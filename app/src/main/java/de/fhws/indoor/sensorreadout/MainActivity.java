@@ -91,7 +91,6 @@ public class MainActivity extends AppCompatActivity {
     private HashMap<PedestrianActivity, PedestrianActivityButton> activityButtons = new HashMap<>();
     private PedestrianActivity currentPedestrianActivity = DEFAULT_ACTIVITY;
     private Timer statisticsTimer = null;
-    private MultiPermissionRequester permissionRequester = new MultiPermissionRequester(this);
 
     private int groundTruthCounter = 0;
     private long lastUserInteractionTs;
@@ -111,10 +110,11 @@ public class MainActivity extends AppCompatActivity {
         // This static call will reset default values for preferences only on the first ever read
         PreferenceManager.setDefaultValues(getBaseContext(), R.xml.preferences, false);
 
+        MultiPermissionRequester.init(this);
         // context access
         MainActivity.context = getApplicationContext();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            recordingStateBLEBroadcaster = new RecordingStateBLEBroadcaster(permissionRequester);
+            recordingStateBLEBroadcaster = new RecordingStateBLEBroadcaster(MultiPermissionRequester.get());
         }
         recordingManager = new RecordingManager(new DataFolder(context, "sensorOutFiles").getFolder(), FILE_PROVIDER_AUTHORITY);
 
@@ -546,8 +546,8 @@ public class MainActivity extends AppCompatActivity {
         config.ftmRangingIntervalMSec = Long.parseLong(preferences.getString("prefFtmRangingIntervalMSec", Long.toString(DEFAULT_WIFI_SCAN_INTERVAL)));
 
         try {
-            sensorManager.configure(this, config, permissionRequester);
-            permissionRequester.launch();
+            sensorManager.configure(this, config);
+            MultiPermissionRequester.get().launch(() -> {});
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(this, "Failed to configure sensors", Toast.LENGTH_LONG).show();
