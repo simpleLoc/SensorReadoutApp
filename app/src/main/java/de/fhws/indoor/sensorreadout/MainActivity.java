@@ -320,7 +320,7 @@ public class MainActivity extends AppCompatActivity {
     private void start() {
         try {
             RecordingSession recordingSession = recordingManager.startNewSession();
-            logger.start(recordingSession, new Logger.FileMetadata(metaPerson, metaComment));
+            logger.start(recordingSession, new Logger.FileMetadata(metaPerson, Build.MODEL + ", " + metaComment));
             final TextView txt = findViewById(R.id.txtFile);
             txt.setText(logger.getName());
             sensorManager.start(this);
