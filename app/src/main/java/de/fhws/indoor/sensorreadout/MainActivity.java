@@ -216,22 +216,20 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        btnMetadata.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                if(!isInitialized){
-                    MetadataFragment metadataDialog = new MetadataFragment(metaPerson, metaComment, new MetadataFragment.ResultListener() {
-                        @Override public void onCommit(String person, String comment) {
-                            metaPerson = person;
-                            metaComment = comment;
-                            Log.d("MetadataDialog", "Person: " + person + " Comment: " + comment);
-                        }
+        btnMetadata.setOnClickListener(v -> {
+            if(!isInitialized){
+                MetadataFragment metadataDialog = new MetadataFragment(metaPerson, metaComment, new MetadataFragment.ResultListener() {
+                    @Override public void onCommit(String person, String comment) {
+                        metaPerson = person;
+                        metaComment = comment;
+                        Log.d("MetadataDialog", "Person: " + person + " Comment: " + comment);
+                    }
 
-                        @Override public void onClose() {}
-                    });
-                    metadataDialog.show(getSupportFragmentManager(), "metadata");
-                } else {
-                    playSound(mpFailure);
-                }
+                    @Override public void onClose() {}
+                });
+                metadataDialog.show(getSupportFragmentManager(), "metadata");
+            } else {
+                playSound(mpFailure);
             }
         });
 
