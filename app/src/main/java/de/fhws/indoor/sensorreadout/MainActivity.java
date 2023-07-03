@@ -56,7 +56,8 @@ import de.fhws.indoor.libsmartphonesensors.sensors.WiFiRTTScan;
 import de.fhws.indoor.libsmartphonesensors.SensorType;
 import de.fhws.indoor.libsmartphonesensors.loggers.TimedOrderedLogger;
 import de.fhws.indoor.libsmartphonesensors.ui.EventCounterView;
-import de.fhws.indoor.libsmartphonesensors.util.MultiPermissionRequester;
+import de.fhws.indoor.libsmartphonesensors.util.permissions.AppCompatMultiPermissionRequester;
+import de.fhws.indoor.libsmartphonesensors.util.permissions.IPermissionRequester;
 import de.fhws.indoor.sensorreadout.dialogs.MetadataFragment;
 import de.fhws.indoor.sensorreadout.dialogs.RecordingSuccessfulDialog;
 
@@ -75,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
 
     // sensors
     private SensorManager sensorManager;
+    private AppCompatMultiPermissionRequester permissionRequester = null;
     private RecordingStateBLEBroadcaster recordingStateBLEBroadcaster;
 
     private final Logger logger = new TimedOrderedLogger(this);
@@ -110,11 +112,11 @@ public class MainActivity extends AppCompatActivity {
         // This static call will reset default values for preferences only on the first ever read
         PreferenceManager.setDefaultValues(getBaseContext(), R.xml.preferences, false);
 
-        MultiPermissionRequester.init(this);
+        permissionRequester = new AppCompatMultiPermissionRequester(this);
         // context access
         MainActivity.context = getApplicationContext();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            recordingStateBLEBroadcaster = new RecordingStateBLEBroadcaster(MultiPermissionRequester.get());
+            recordingStateBLEBroadcaster = new RecordingStateBLEBroadcaster(permissionRequester);
         }
         recordingManager = new RecordingManager(new DataFolder(context, "sensorOutFiles").getFolder(), FILE_PROVIDER_AUTHORITY);
 
@@ -544,8 +546,8 @@ public class MainActivity extends AppCompatActivity {
         config.ftmRangingIntervalMSec = Long.parseLong(preferences.getString("prefFtmRangingIntervalMSec", Long.toString(DEFAULT_WIFI_SCAN_INTERVAL)));
 
         try {
-            sensorManager.configure(this, config);
-            MultiPermissionRequester.get().launch(() -> {});
+            sensorManager.configure(this, config, permissionRequester);
+            permissionRequester.launch(() -> {});
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(this, "Failed to configure sensors", Toast.LENGTH_LONG).show();
